@@ -6,7 +6,6 @@ import { MATS } from '../data/materials.js';
 import { state, ui, getF, mutate, snap, commit } from '../2d/state.js';
 
 /* ======================= 右侧面板 ======================= */
-const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 export function renderPanel(){
   renderFab();

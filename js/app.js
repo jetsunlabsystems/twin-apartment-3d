@@ -4,7 +4,7 @@ import { LANG, setLang, applyStaticLang, TIPS } from './i18n.js';
 import { state, ui, onStateChange } from './2d/state.js';
 import { buildDefs, renderOpenings, renderDims, renderAll } from './2d/renderer.js';
 import { fitView, applyView, select } from './2d/interactions.js';
-import { buildLib, syncFullscreen, updateHeader, viewMode, is3D } from './ui/toolbar.js';
+import { buildLib, initToolbar, syncFullscreen, updateHeader, viewMode, is3D } from './ui/toolbar.js';
 import { renderPanel, syncPaneBtns } from './ui/panels.js';
 import { init3D, View3D } from './3d/scene.js';
 
@@ -14,6 +14,7 @@ syncFullscreen();
 syncPaneBtns();
 buildDefs();
 buildLib();
+initToolbar();
 renderOpenings();
 renderDims();
 renderPanel();

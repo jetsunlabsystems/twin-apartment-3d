@@ -13,7 +13,7 @@ const ln = (x1,y1,x2,y2,ex='') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${
 const pa = (d,f='none',ex='') => `<path d="${d}" fill="${f}" ${ST} ${ex}/>`;
 const DASH = 'stroke-dasharray="4 3"';
 
-function furnSVG(t,w,d,c){
+export function furnSVG(t,w,d,c){
   const x = -w/2, y = -d/2, m = Math.min(w,d);
   switch (t){
     case 'bed': {

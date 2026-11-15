@@ -36,7 +36,7 @@ export function pushOut(f){
     if (!moved) return;
   }
 }
-function addItem(it, x, y){
+export function addItem(it, x, y){
   const [type,name,w,d,color] = it, f = F(type,name,Math.round(x/10)*10,Math.round(y/10)*10,w,d,0,color);
   pushOut(f);
   ui.sel = {kind:'furn', id:f.id};
@@ -52,7 +52,7 @@ function toggleWall(id){
   toast(on ? tr('已恢复墙体', 'Wall restored') : tr(`已标记拆除 ${Math.max(w[2]-w[0], w[3]-w[1])} mm 墙体`, `Marked ${Math.max(w[2]-w[0], w[3]-w[1])} mm of wall for removal`));
 }
 
-function setTool(t){
+export function setTool(t){
   ui.tool = t; ui.mA = null; ui.mCur = null;
   svg.setAttribute('class', 'tool-' + t);
   document.querySelectorAll('#tools .btn').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
@@ -89,8 +89,8 @@ function zoomAt(ns, mx, my){
   const px = view.x0 + mx/view.s, py = view.y0 + my/view.s;
   view.s = ns; view.x0 = px - mx/ns; view.y0 = py - my/ns; applyView();
 }
-const zoomCenter = k => zoomAt(view.s*k, svg.clientWidth/2, svg.clientHeight/2);
-const setRatio = r => zoomAt(1/(r*PX_MM), svg.clientWidth/2, svg.clientHeight/2);
+export const zoomCenter = k => zoomAt(view.s*k, svg.clientWidth/2, svg.clientHeight/2);
+export const setRatio = r => zoomAt(1/(r*PX_MM), svg.clientWidth/2, svg.clientHeight/2);
 
 export function toMM(e){
   const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
