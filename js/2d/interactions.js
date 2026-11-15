@@ -1,8 +1,8 @@
 // 2D Canvas Viewport, Pointer Events, Snapping, Measurement & Keyboard Shortcuts
-import { $, $$, PX_MM, TAP, norm, aabb, narrow } from '../config.js';
+import { $, $$, PX_MM, TAP, norm, narrow } from '../config.js';
 import { tr } from '../i18n.js';
 import { BOUNDS, WALLS, WINS } from '../data/floorplan.js';
-import { state, ui, view, getF, mutate, snap, commit, undo, redo } from './state.js';
+import { state, ui, view, getF, aabb, mutate, snap, commit, undo, redo } from './state.js';
 import { renderAll, renderSel } from './renderer.js';
 import { renderPanel, renderFab, drawer, closeDrawers } from '../ui/panels.js';
 

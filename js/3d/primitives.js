@@ -16,7 +16,16 @@ export function shapeOf(poly, flip){
   return s;
 }
 
-/* ======================= 几何小工具（y = 底面高度） ======================= */
+/* ======================= 几何与材质工具 ======================= */
+const matCache = new Map();
+export function mat(color, o = {}){
+  const key = color + JSON.stringify(o);
+  if (!matCache.has(key)){
+    matCache.set(key, new THREE.MeshStandardMaterial({ color, roughness: 0.7, ...o }));
+  }
+  return matCache.get(key);
+}
+
 export const asMat = m => typeof m === 'string' ? mat(m) : m;
 export const sh = o => { o.castShadow = o.receiveShadow = true; return o; };
 export const mesh = (geo, m) => sh(new THREE.Mesh(geo, asMat(m)));

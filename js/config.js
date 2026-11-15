@@ -19,6 +19,8 @@ export const area = poly => Math.abs(poly.reduce((a, p, i) => {
   return a + p[0] * q[1] - q[0] * p[1];
 }, 0)) / 2 / 1e6;
 
+export { aabb } from './2d/state.js';
+
 export const perim = poly => poly.reduce((a, p, i) => {
   const q = poly[(i + 1) % poly.length];
   return a + Math.hypot(q[0] - p[0], q[1] - p[1]);
