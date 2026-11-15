@@ -118,5 +118,8 @@ export function aabb(f) {
   const rad = (norm(f.rot || 0) * Math.PI) / 180;
   const c = Math.abs(Math.cos(rad)), s = Math.abs(Math.sin(rad));
   const hw = (f.w * c + f.d * s) / 2, hd = (f.w * s + f.d * c) / 2;
-  return [f.cx - hw, f.cy - hd, f.cx + hw, f.cy + hd];
+  const arr = [f.cx - hw, f.cy - hd, f.cx + hw, f.cy + hd];
+  arr.hw = hw;
+  arr.hh = hd;
+  return arr;
 }

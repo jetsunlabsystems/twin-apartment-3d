@@ -98,7 +98,7 @@ kbd{font:11px ui-monospace,Menlo,monospace;background:#f2ece2;border:1px solid v
   padding:8px 16px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none;z-index:10}
 #toast.show{opacity:1;transform:translateX(-50%)}
 /* ---------- 2D / 3D 切换 ---------- */
-.seg{position:relative;padding:3px}
+.seg{position:relative;padding:3px;direction:ltr;display:inline-flex;align-items:center}
 .seg .btn{position:relative;z-index:1;width:82px;transition:color .45s}
 .seg .btn:hover{background:transparent}
 .seg .pill{position:absolute;left:3px;top:3px;bottom:3px;width:82px;border-radius:6px;background:var(--accent);
