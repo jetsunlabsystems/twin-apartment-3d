@@ -161,7 +161,7 @@ export function renderFurn(){
   g.innerHTML = state.furniture.map(f => {
     const fs = Math.max(80, Math.min(170, Math.min(f.w,f.d)*.2));
     const label = Math.min(f.w,f.d) >= 380 && !NOLABEL.includes(f.type)
-      ? `<text transform="rotate(${-f.rot})" font-size="${fs}" text-anchor="middle" dominant-baseline="central" fill="#4a443c" opacity=".8" pointer-events="none">${esc(nm(f.name))}</text>` : '';
+      ? `<text transform="rotate(${-f.rot})" font-family="'Tajawal', sans-serif" font-size="${fs}" text-anchor="middle" dominant-baseline="central" fill="#4a443c" opacity=".8" pointer-events="none">${esc(nm(f.name))}</text>` : '';
     return `<g class="furn" data-fid="${f.id}" transform="translate(${f.cx} ${f.cy}) rotate(${f.rot})">${furnSVG(f.type,f.w,f.d,f.color)}${label}</g>`;
   }).join('');
 }
@@ -229,14 +229,14 @@ export function renderLabels(){
   g.setAttribute('display', ui.layers.labels ? 'inline' : 'none');
   g.innerHTML = ROOMS.filter(r => r.at).map(r => {
     const [x,y] = r.at, halo = 'stroke="#fbf9f4" stroke-width="45" paint-order="stroke" stroke-linejoin="round"';
-    return `<text x="${x}" y="${y}" font-size="250" font-weight="600" text-anchor="middle" fill="#2b2824" ${halo}>${esc(nm(state.rooms[r.id].name))}</text>
-      <text x="${x}" y="${y+260}" font-size="175" text-anchor="middle" fill="#7d7366" ${halo}>${fmt(area(r.poly))} m²</text>`;
+    return `<text x="${x}" y="${y}" font-family="'Tajawal', sans-serif" font-size="250" font-weight="600" text-anchor="middle" fill="#2b2824" ${halo}>${esc(nm(state.rooms[r.id].name))}</text>
+      <text x="${x}" y="${y+260}" font-family="'Tajawal', sans-serif" font-size="175" text-anchor="middle" fill="#7d7366" ${halo}>${fmt(area(r.poly))} m²</text>`;
   }).join('');
 }
 
 export function renderDims(){
   const DC = '#7d7160', LS = `stroke="${DC}" stroke-width="1" vector-effect="non-scaling-stroke"`, TK = `stroke="${DC}" stroke-width="2" vector-effect="non-scaling-stroke"`;
-  const txt = (x,y,v,rot) => `<text x="${x}" y="${y}" font-size="${v<400?140:200}" text-anchor="middle" fill="${DC}" ${rot?`transform="rotate(-90 ${x} ${y})"`:''}>${v}</text>`;
+  const txt = (x,y,v,rot) => `<text x="${x}" y="${y}" font-family="'Tajawal', sans-serif" font-size="${v<400?140:200}" text-anchor="middle" fill="${DC}" ${rot?`transform="rotate(-90 ${x} ${y})"`:''}>${v}</text>`;
   const chain = (horiz, at, start, segs) => {
     const pts = [start]; segs.forEach(v => pts.push(pts[pts.length-1]+v));
     let s = horiz ? `<line x1="${pts[0]}" y1="${at}" x2="${pts.at(-1)}" y2="${at}" ${LS}/>` : `<line x1="${at}" y1="${pts[0]}" x2="${at}" y2="${pts.at(-1)}" ${LS}/>`;
@@ -268,7 +268,7 @@ export function renderMeasure(){
     const col = tmp ? '#2f5d62' : '#b5653a', S = `stroke="${col}" stroke-width="1.5" vector-effect="non-scaling-stroke"`;
     return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" ${S}/>
       <line x1="${a.x-nx}" y1="${a.y-ny}" x2="${a.x+nx}" y2="${a.y+ny}" ${S}/><line x1="${b.x-nx}" y1="${b.y-ny}" x2="${b.x+nx}" y2="${b.y+ny}" ${S}/>
-      <text x="${mx}" y="${my-5*k}" font-size="${fs}" text-anchor="middle" fill="${col}" font-weight="600" transform="rotate(${ang} ${mx} ${my})"
+      <text x="${mx}" y="${my-5*k}" font-family="'Tajawal', sans-serif" font-size="${fs}" text-anchor="middle" fill="${col}" font-weight="600" transform="rotate(${ang} ${mx} ${my})"
         stroke="#fff" stroke-width="${3.5*k}" paint-order="stroke">${Math.round(L)} mm</text>`;
   };
   let s = state.measures.map(m => one(m.a,m.b)).join('');
@@ -293,7 +293,7 @@ export function renderSel(){
         <circle data-handle="size" cx="${sx}" cy="${sy}" r="${hit}" fill="transparent"/>
         <rect data-handle="size" x="${sx-5*hs*k}" y="${sy-5*hs*k}" width="${10*hs*k}" height="${10*hs*k}" fill="#b5653a"><title>${tr('اسحب لتعديل الحجم','Drag to resize')}</title></rect></g>`;
       const {hh} = aabb(f);
-      s += `<text x="${f.cx}" y="${f.cy+hh+24*k}" font-size="${12*k}" text-anchor="middle" fill="#b5653a" font-weight="600" pointer-events="none"
+      s += `<text x="${f.cx}" y="${f.cy+hh+24*k}" font-family="'Tajawal', sans-serif" font-size="${12*k}" text-anchor="middle" fill="#b5653a" font-weight="600" pointer-events="none"
         stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${f.w} × ${f.d}</text>`;
     }
   } else if (ui.sel?.kind === 'room'){

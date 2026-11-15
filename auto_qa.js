@@ -176,6 +176,39 @@ async function runQA() {
   fs.writeFileSync(patht, Buffer.from(sst.data, 'base64'));
   console.log(`[QA] Saved 3D terrace view to: ${patht}`);
 
+  // 8. Test Furniture Selection and Full Tajawal Text without Truncation in FAB
+  console.log('[QA] Selecting TV Stand (وحدة تلفزيون جدارية فاخرة) to verify FAB and panel text...');
+  const resFurn = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const tv = window.state.furniture.find(f => f.name && (f.name.zh.includes('تلفزيون') || f.name.en.includes('تلفزيون')));
+      if (tv) {
+        window.select({ kind: 'furn', id: tv.id });
+        const fabName = document.querySelector('#fab .name');
+        const computedFont = fabName ? window.getComputedStyle(fabName).fontFamily : '';
+        const fabVisible = document.querySelector('#fab')?.classList.contains('show');
+        const panelInput = document.querySelector('#fName');
+        return {
+          tvId: tv.id,
+          fullName: tv.name.zh,
+          fabText: fabName?.textContent,
+          isTruncated: fabName ? fabName.scrollWidth > fabName.clientWidth : false,
+          computedFont,
+          fabVisible,
+          panelInputValue: panelInput?.value
+        };
+      }
+      return { error: 'TV Stand not found' };
+    })()`,
+    returnByValue: true
+  });
+  console.log('[QA] Furniture FAB & Typography Verification:', JSON.stringify(resFurn.result.value, null, 2));
+
+  await new Promise(r => setTimeout(r, 1200));
+  const ssf = await send('Page.captureScreenshot', { format: 'png' });
+  const pathf = path.join(ARTIFACT_DIR, 'qa_furniture_fab_fixed.png');
+  fs.writeFileSync(pathf, Buffer.from(ssf.data, 'base64'));
+  console.log(`[QA] Saved Furniture FAB view to: ${pathf}`);
+
   // Clean up
   try { await fetch(`http://127.0.0.1:${PORT}/json/close/${tab.id}`); } catch(e) {}
   ws.close();
