@@ -9,7 +9,8 @@ import { $, COARSE, TAP, esc, fmt, area } from '../config.js';
 import { tr, nm, LANG } from '../i18n.js';
 import { BOUNDS, ROOMS } from '../data/floorplan.js';
 import { state, ui, view, commit, snap, getF } from '../2d/state.js';
-import { snapMove } from '../2d/interactions.js';
+import { select, snapMove } from '../2d/interactions.js';
+import { drawer } from '../ui/panels.js';
 import { renderAll } from '../2d/renderer.js';
 import { OX, OY, wx, wz, M, H, box, cyl, mat, metal } from './primitives.js';
 import { buildFurniture } from './furniture-models.js';
@@ -187,11 +188,13 @@ export function init3D() {
     if (h?.door) {
       h.door.open = !h.door.open;
     } else if (h?.fid) {
-      if (typeof window.select === 'function') window.select({ kind: 'furn', id: h.fid });
+      select({ kind: 'furn', id: h.fid });
+      drawer('panel', true);
     } else if (h?.room) {
-      if (typeof window.select === 'function') window.select({ kind: 'room', id: h.room });
+      select({ kind: 'room', id: h.room });
+      drawer('panel', true);
     } else {
-      if (typeof window.select === 'function') window.select(null);
+      select(null);
     }
   });
 
@@ -223,9 +226,16 @@ export function buildLabels() {
   ROOMS.filter(r => r.at).forEach(r => {
     const el = document.createElement('div');
     el.className = 'rlabel';
-    el.innerHTML = `${esc(nm(state.rooms?.[r.id]?.name || r.name))}<small>${area(r.poly).toFixed(1)}m²</small>`;
+    el.innerHTML = `<span>${esc(nm(state.rooms?.[r.id]?.name || r.name))}</span><small>${area(r.poly).toFixed(1)}m²</small>`;
+    el.onclick = (e) => {
+      e.stopPropagation();
+      select({ kind: 'room', id: r.id });
+      drawer('panel', true);
+      flyToRoom(r.id);
+    };
     const o = new CSS2DObject(el);
-    o.position.set(wx(r.at[0]), opt.cut + 0.22, wz(r.at[1]));
+    // Sit cleanly on the room floor (y = 0.05m), never floating in the void
+    o.position.set(wx(r.at[0]), 0.05, wz(r.at[1]));
     o.visible = labelG.visible && opt.labels;
     labelG.add(o);
   });
@@ -239,15 +249,28 @@ export function buildLabels() {
       b.onclick = () => {
         roomList.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         if (opt.mode === 'walk') setMode('orbit');
-        b.dataset.room === '__all' ? flyTo(isoWhole()) : flyToRoom(b.dataset.room);
+        if (b.dataset.room === '__all') {
+          select(null);
+          flyTo(isoWhole());
+        } else {
+          select({ kind: 'room', id: b.dataset.room });
+          drawer('panel', true);
+          flyToRoom(b.dataset.room);
+        }
       };
     });
   }
 }
 
 export function showLabels(v) {
-  labelG.visible = v;
-  labelG.children.forEach(o => (o.visible = v));
+  labelG.visible = !!v;
+  labelG.children.forEach(o => {
+    o.visible = !!v;
+    if (o.element) o.element.style.display = v ? '' : 'none';
+  });
+  if (labelRenderer && scene && camera) {
+    labelRenderer.render(scene, camera);
+  }
 }
 
 export function applyGrow() {
@@ -316,7 +339,7 @@ function planPose() {
   const visH = SH() / view.s / 1000;
   const dist = visH / 2 / Math.tan((FOV / 2) * Math.PI / 180);
   const t = new THREE.Vector3(wx(cx), 0, wz(cy));
-  return pose(t, t.clone().setY(dist));
+  return pose(t, t.clone().add(new THREE.Vector3(0, dist, 1e-4)));
 }
 
 function isoFrom(t, d = 26) {
@@ -353,7 +376,16 @@ function setPose(P) {
 
 function animate(dur, fn) {
   return new Promise(res => {
-    anim = { dur, fn, t0: performance.now(), res };
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      try { fn(1); } catch (e) {}
+      if (anim && anim.res === finish) anim = null;
+      res();
+    };
+    anim = { dur, fn, t0: performance.now(), res: finish };
+    setTimeout(finish, dur + 120);
   });
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -400,26 +432,23 @@ export async function enter() {
   const P0 = curPose();
   const P1 = isoWhole();
 
-  await animate(650, t => {
+  await animate(500, t => {
     stage.classList.toggle('mid', t > 0.08);
   });
   stage.classList.remove('mid');
   stage.classList.add('in3d');
 
-  animate(1100, t => camTween(P0, P1, ease(t)));
-  await animate(750, t => {
-    grow = ease(t);
+  await animate(850, t => {
+    const e = ease(t);
+    camTween(P0, P1, e);
+    grow = e;
+    furnGrow = e;
     applyGrow();
   });
   grow = 1;
-  applyGrow();
-
-  await animate(600, t => {
-    furnGrow = ease(t);
-    applyGrow();
-  });
   furnGrow = 1;
   applyGrow();
+  setPose(P1);
 
   stage.classList.remove('animating');
   showLabels(opt.labels);
@@ -466,8 +495,19 @@ const ray = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 function pick(e) {
-  if (e) mouse.set((e.clientX / SW()) * 2 - 1, -(e.clientY / SH()) * 2 + 1);
-  else mouse.set(0, 0);
+  if (e) {
+    const cv = renderer?.domElement;
+    if (cv) {
+      const rect = cv.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      mouse.set(x, y);
+    } else {
+      mouse.set((e.clientX / SW()) * 2 - 1, -(e.clientY / SH()) * 2 + 1);
+    }
+  } else {
+    mouse.set(0, 0);
+  }
   ray.setFromCamera(mouse, camera);
 
   const hits = ray.intersectObjects([furnG, archFloor, archUp], true);
@@ -484,7 +524,15 @@ function pick(e) {
 }
 
 function groundAt(cx, cy) {
-  mouse.set((cx / SW()) * 2 - 1, -(cy / SH()) * 2 + 1);
+  const cv = renderer?.domElement;
+  if (cv) {
+    const rect = cv.getBoundingClientRect();
+    const x = ((cx - rect.left) / rect.width) * 2 - 1;
+    const y = -((cy - rect.top) / rect.height) * 2 + 1;
+    mouse.set(x, y);
+  } else {
+    mouse.set((cx / SW()) * 2 - 1, -(cy / SH()) * 2 + 1);
+  }
   ray.setFromCamera(mouse, camera);
   const hits = ray.intersectObject(ground);
   if (!hits.length) return null;
@@ -738,36 +786,40 @@ function startLoop() {
 
 function loop() {
   raf = requestAnimationFrame(loop);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const now = performance.now();
+  try {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const now = performance.now();
 
-  if (anim) {
-    const t = clamp01((now - anim.t0) / anim.dur);
-    anim.fn(t);
-    if (t >= 1) {
-      const r = anim.res;
-      anim = null;
-      r();
+    if (anim) {
+      const t = clamp01((now - anim.t0) / anim.dur);
+      anim.fn(t);
+      if (t >= 1) {
+        const r = anim.res;
+        anim = null;
+        r();
+      }
+    } else if (fly) {
+      const t = clamp01((now - fly.t0) / fly.dur);
+      camTween(fly.A, fly.B, ease(t));
+      if (t >= 1) fly = null;
+    } else if (opt.mode === 'orbit') {
+      orbit.update();
+    } else {
+      stepWalk(dt);
     }
-  } else if (fly) {
-    const t = clamp01((now - fly.t0) / fly.dur);
-    camTween(fly.A, fly.B, ease(t));
-    if (t >= 1) fly = null;
-  } else if (opt.mode === 'orbit') {
-    orbit.update();
-  } else {
-    stepWalk(dt);
+
+    doors.forEach(d => {
+      const tg = d.open ? d.a1 : d.a0;
+      d.cur += (tg - d.cur) * Math.min(1, dt * 6);
+      d.pivot.rotation.y = d.cur;
+    });
+
+    updateSel();
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
+  } catch (err) {
+    console.error('Three.js Loop Error:', err);
   }
-
-  doors.forEach(d => {
-    const tg = d.open ? d.a1 : d.a0;
-    d.cur += (tg - d.cur) * Math.min(1, dt * 6);
-    d.pivot.rotation.y = d.cur;
-  });
-
-  updateSel();
-  renderer.render(scene, camera);
-  labelRenderer.render(scene, camera);
 }
 
 export function shot() {

@@ -7,6 +7,15 @@ import { fitView, applyView, select } from './2d/interactions.js';
 import { buildLib, initToolbar, syncFullscreen, updateHeader, viewMode, is3D } from './ui/toolbar.js';
 import { renderPanel, syncPaneBtns } from './ui/panels.js';
 import { init3D, View3D } from './3d/scene.js';
+import { ROOMS, WALLS, WINS } from './data/floorplan.js';
+import { MATS } from './data/materials.js';
+
+if (typeof window !== 'undefined') {
+  window.ROOMS = ROOMS;
+  window.WALLS = WALLS;
+  window.WINS = WINS;
+  window.MATS = MATS;
+}
 
 // 1. Initial UI & Language Setup
 applyStaticLang();

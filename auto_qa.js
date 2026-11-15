@@ -1,4 +1,4 @@
-// Automated Browser QA via Chrome DevTools Protocol (CDP)
+// Comprehensive Automated Browser QA via Chrome DevTools Protocol (CDP)
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -7,7 +7,7 @@ const PORT = 9222;
 const APP_URL = 'http://localhost:8000/';
 const ARTIFACT_DIR = 'C:/Users/owner/.gemini/antigravity/brain/45773e7d-8600-4233-94b0-4df6d96f96ed';
 const CHROME_PATH = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-const USER_DATA_DIR = 'C:/Users/owner/AppData/Local/Temp/chrome_qa_profile_' + Date.now();
+const USER_DATA_DIR = 'C:/Users/owner/AppData/Local/Temp/chrome_full_qa_' + Date.now();
 
 async function runQA() {
   console.log(`[QA] Launching Chrome with CDP on port ${PORT}...`);
@@ -23,154 +23,163 @@ async function runQA() {
     'about:blank'
   ], { stdio: 'ignore' });
 
-  // Wait for Chrome port to become active
-  let connected = false;
   for (let i = 0; i < 30; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${PORT}/json/version`);
-      if (res.ok) {
-        connected = true;
-        break;
-      }
+      if (res.ok) break;
     } catch (e) {
       await new Promise(r => setTimeout(r, 200));
     }
   }
 
-  if (!connected) {
-    chromeProc.kill();
-    throw new Error('Failed to connect to Chrome CDP after 6 seconds');
+  const tabRes = await fetch(`http://127.0.0.1:${PORT}/json/new?${encodeURIComponent(APP_URL)}`, { method: 'PUT' });
+  const tab = await tabRes.json();
+  const ws = new WebSocket(tab.webSocketDebuggerUrl);
+
+  const consoleLogs = [];
+  const uncaughtErrors = [];
+  let reqId = 1;
+  const pending = new Map();
+
+  function send(method, params = {}) {
+    return new Promise((resolve, reject) => {
+      const id = reqId++;
+      pending.set(id, { resolve, reject });
+      ws.send(JSON.stringify({ id, method, params }));
+    });
   }
-  console.log(`[QA] Chrome CDP connected!`);
 
-  try {
-    // 1. Create a new tab for testing
-    const tabRes = await fetch(`http://127.0.0.1:${PORT}/json/new?${encodeURIComponent(APP_URL)}`, { method: 'PUT' });
-    const tab = await tabRes.json();
-    const wsUrl = tab.webSocketDebuggerUrl;
-    console.log(`[QA] Opened target tab: ${tab.id}`);
-
-    const ws = new WebSocket(wsUrl);
-
-    const consoleLogs = [];
-    const uncaughtErrors = [];
-    let reqId = 1;
-    const pending = new Map();
-
-    function send(method, params = {}) {
-      return new Promise((resolve, reject) => {
-        const id = reqId++;
-        pending.set(id, { resolve, reject });
-        ws.send(JSON.stringify({ id, method, params }));
-      });
+  ws.onmessage = msg => {
+    const data = JSON.parse(msg.data);
+    if (data.id && pending.has(data.id)) {
+      const { resolve, reject } = pending.get(data.id);
+      pending.delete(data.id);
+      if (data.error) reject(data.error);
+      else resolve(data.result);
     }
-
-    await new Promise((resolve, reject) => {
-      ws.onopen = resolve;
-      ws.onerror = reject;
-    });
-
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.id && pending.has(msg.id)) {
-        const { resolve, reject } = pending.get(msg.id);
-        pending.delete(msg.id);
-        if (msg.error) reject(msg.error);
-        else resolve(msg.result);
-        return;
-      }
-
-      if (msg.method === 'Runtime.consoleAPICalled') {
-        const args = msg.params.args.map(a => a.value !== undefined ? a.value : (a.description || '')).join(' ');
-        consoleLogs.push({ type: msg.params.type, text: args });
-        if (msg.params.type === 'error') {
-          console.error(`  [BROWSER ERROR] ${args}`);
-        } else {
-          console.log(`  [BROWSER ${msg.params.type.toUpperCase()}] ${args}`);
-        }
-      } else if (msg.method === 'Runtime.exceptionThrown') {
-        const desc = msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text;
-        const line = msg.params.exceptionDetails.lineNumber;
-        const url = msg.params.exceptionDetails.url;
-        uncaughtErrors.push({ desc, line, url });
-        console.error(`  [UNCAUGHT EXCEPTION] ${desc} at ${url}:${line}`);
-      }
-    };
-
-    // Enable CDP domains
-    await send('Page.enable');
-    await send('Runtime.enable');
-    await send('Console.enable');
-    await send('Emulation.setDeviceMetricsOverride', {
-      width: 1440,
-      height: 900,
-      deviceScaleFactor: 1,
-      mobile: false
-    });
-
-    console.log('[QA] Waiting 4s for page initial render...');
-    await new Promise(r => setTimeout(r, 4000));
-
-    // Take 2D Screenshot
-    const ss2d = await send('Page.captureScreenshot', { format: 'png' });
-    const path2d = path.join(ARTIFACT_DIR, 'qa_2d_view.png');
-    fs.writeFileSync(path2d, Buffer.from(ss2d.data, 'base64'));
-    console.log(`[QA] Saved 2D screenshot to: ${path2d}`);
-
-    // Test clicking a room
-    console.log('[QA] Testing room selection (Room 1)...');
-    await send('Runtime.evaluate', {
-      expression: `(() => {
-        const room = document.querySelector('#gRooms polygon, #gRooms path');
-        if (room) {
-          room.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 400, clientY: 400 }));
-          room.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 400, clientY: 400 }));
-          return 'Room clicked';
-        }
-        return 'No room element found';
-      })()`
-    });
-
-    await new Promise(r => setTimeout(r, 1000));
-
-    // Switch to 3D Scene
-    console.log('[QA] Switching to 3D scene (clicking 3D button)...');
-    const switchRes = await send('Runtime.evaluate', {
-      expression: `(() => {
-        const btn = document.querySelector('button[data-view="3d"]');
-        if (btn) { btn.click(); return '3D button clicked'; }
-        return '3D button not found';
-      })()`
-    });
-    console.log(`[QA] Switch result: ${switchRes.result.value}`);
-
-    console.log('[QA] Waiting 4s for 3D scene, models, and textures to build...');
-    await new Promise(r => setTimeout(r, 4000));
-
-    // Take 3D Screenshot
-    const ss3d = await send('Page.captureScreenshot', { format: 'png' });
-    const path3d = path.join(ARTIFACT_DIR, 'qa_3d_view.png');
-    fs.writeFileSync(path3d, Buffer.from(ss3d.data, 'base64'));
-    console.log(`[QA] Saved 3D screenshot to: ${path3d}`);
-
-    // Close tab and ws
-    try { await fetch(`http://127.0.0.1:${PORT}/json/close/${tab.id}`); } catch(e) {}
-    ws.close();
-
-    console.log('\n================ QA SUMMARY ================');
-    console.log(`Total Uncaught Exceptions: ${uncaughtErrors.length}`);
-    console.log(`Total Console Errors: ${consoleLogs.filter(l => l.type === 'error').length}`);
-    if (uncaughtErrors.length > 0) {
-      console.log('Uncaught errors list:');
-      uncaughtErrors.forEach((e, i) => console.log(`  ${i+1}. ${e.desc}`));
-      process.exit(1);
-    } else {
-      console.log('STATUS: ALL CHECKS PASSED WITH 0 ERRORS!');
+    if (data.method === 'Runtime.exceptionThrown') {
+      uncaughtErrors.push(data.params.exceptionDetails.text + ' ' + (data.params.exceptionDetails.exception?.description || ''));
     }
-  } finally {
-    chromeProc.kill();
-    try { fs.rmSync(USER_DATA_DIR, { recursive: true, force: true }); } catch (e) {}
+    if (data.method === 'Runtime.consoleAPICalled') {
+      const line = `[${data.params.type}] ` + data.params.args.map(a => a.value !== undefined ? a.value : a.description).join(' ');
+      consoleLogs.push({ type: data.params.type, text: line });
+      if (data.params.type === 'error') {
+        console.error('  -> Browser Console Error:', line);
+      }
+    }
+  };
+
+  await new Promise(r => ws.onopen = r);
+  await send('Page.enable');
+  await send('Runtime.enable');
+  await send('Page.bringToFront');
+
+  console.log('[QA] Waiting 3.5s for initial 2D render...');
+  await new Promise(r => setTimeout(r, 3500));
+
+  // 1. Take 2D Screenshot
+  const ss2d = await send('Page.captureScreenshot', { format: 'png' });
+  const path2d = path.join(ARTIFACT_DIR, 'qa_2d_view.png');
+  fs.writeFileSync(path2d, Buffer.from(ss2d.data, 'base64'));
+  console.log(`[QA] Saved 2D view to: ${path2d}`);
+
+  // 2. Test 2D Room Selection and Floor Material Change
+  console.log('[QA] Selecting Room 1 in 2D and switching floor to Walnut...');
+  const res2D = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const r = window.ROOMS[0];
+      window.select({ kind: 'room', id: r.id });
+      const walnutBtn = document.querySelector('#panel [data-mat="walnut"]');
+      if (walnutBtn) walnutBtn.click();
+      return {
+        selected: window.ui.sel?.id,
+        newMat: window.state.rooms[r.id].mat
+      };
+    })()`,
+    returnByValue: true
+  });
+  console.log('[QA] 2D Room and Floor Result:', res2D.result.value);
+
+  // 3. Switch to 3D
+  console.log('[QA] Switching to 3D View...');
+  await send('Runtime.evaluate', {
+    expression: `document.querySelector('button[data-view="3d"]').click()`
+  });
+
+  console.log('[QA] Waiting 3.5s for 3D construction & camera transition...');
+  await new Promise(r => setTimeout(r, 3500));
+
+  // 4. Verify 3D Room Labels and Floor Material in 3D
+  const res3D = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const labels = Array.from(document.querySelectorAll('.rlabel'));
+      const sample = labels.slice(0, 3).map(l => ({ text: l.textContent, transform: l.style.transform }));
+      
+      // Click the first label
+      const first = labels[0];
+      if (first) first.click();
+
+      const fab = document.querySelector('#fab');
+      const propBtn = fab?.querySelector('[data-a="prop"]');
+
+      return {
+        labelCount: labels.length,
+        labelsSample: sample,
+        selectedAfterLabelClick: window.ui.sel,
+        fabShowing: fab?.classList.contains('show'),
+        propBtnText: propBtn?.textContent,
+        panelOpen: !document.querySelector('.app')?.classList.contains('hide-panel')
+      };
+    })()`,
+    returnByValue: true
+  });
+  console.log('[QA] 3D Labels & Selection Test:', JSON.stringify(res3D.result.value, null, 2));
+
+  // 5. Change Floor Material in 3D Mode
+  console.log('[QA] Changing floor material while in 3D mode (to marble)...');
+  const res3DMat = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const curId = window.ui.sel?.id;
+      if (!curId) return { error: 'No room selected' };
+      const marbleBtn = document.querySelector('#panel [data-mat="marble"]');
+      if (marbleBtn) {
+        marbleBtn.click();
+        return {
+          roomId: curId,
+          updatedMat: window.state.rooms[curId].mat
+        };
+      }
+      return { error: 'Marble button not found' };
+    })()`,
+    returnByValue: true
+  });
+  console.log('[QA] 3D Floor Material Update Result:', res3DMat.result.value);
+
+  await new Promise(r => setTimeout(r, 1500));
+
+  // 6. Capture 3D Screenshot with updated floor and labels
+  const ss3d = await send('Page.captureScreenshot', { format: 'png' });
+  const path3d = path.join(ARTIFACT_DIR, 'qa_3d_view_fixed.png');
+  fs.writeFileSync(path3d, Buffer.from(ss3d.data, 'base64'));
+  console.log(`[QA] Saved 3D view to: ${path3d}`);
+
+  // Clean up
+  try { await fetch(`http://127.0.0.1:${PORT}/json/close/${tab.id}`); } catch(e) {}
+  ws.close();
+
+  console.log('\n================ QA SUMMARY ================');
+  console.log(`Total Uncaught Exceptions: ${uncaughtErrors.length}`);
+  console.log(`Total Console Errors: ${consoleLogs.filter(l => l.type === 'error').length}`);
+  if (uncaughtErrors.length > 0) {
+    console.log('Uncaught errors list:');
+    uncaughtErrors.forEach((e, i) => console.log(`  ${i+1}. ${e}`));
+    process.exit(1);
+  } else {
+    console.log('STATUS: ALL CHECKS PASSED WITH 0 ERRORS!');
   }
+
+  chromeProc.kill();
+  try { fs.rmSync(USER_DATA_DIR, { recursive: true, force: true }); } catch (e) {}
 }
 
 runQA().catch(err => {

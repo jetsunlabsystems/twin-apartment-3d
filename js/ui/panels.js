@@ -82,8 +82,8 @@ export function renderFab(){
   fab.innerHTML = f
     ? `<span class="name">${esc(nm(f.name))}</span><button class="btn" data-a="rotL">↺</button><button class="btn" data-a="rotR">↻ ${tr('تدوير','Rotate')}</button>
        <button class="btn" data-a="dup">${tr('نسخ','Duplicate')}</button><button class="btn danger" data-a="del">${tr('حذف','Delete')}</button><span class="sep"></span>
-       <button class="btn narrow-only" data-a="prop">${tr('الخصائص','Properties')}</button><button class="btn" data-a="done">${tr('تم','Done')}</button>`
-    : `<span class="name">${esc(nm(state.rooms[r.id].name))}</span><button class="btn narrow-only" data-a="prop">${tr('الأرضية / الخصائص','Floor / Properties')}</button><button class="btn" data-a="done">${tr('تم','Done')}</button>`;
+       <button class="btn" data-a="prop">${tr('الخصائص','Properties')}</button><button class="btn" data-a="done">${tr('تم','Done')}</button>`
+    : `<span class="name">${esc(nm(state.rooms[r.id].name))}</span><button class="btn primary" data-a="prop">🎨 ${tr('الأرضية / الخصائص','Floor / Properties')}</button><button class="btn" data-a="done">${tr('تم','Done')}</button>`;
   fab.classList.add('show');
   fab.querySelectorAll('[data-a]').forEach(b => b.onclick = () => ({
     rotL:() => rotateSel(-90), rotR:() => rotateSel(90), dup:duplicateSel, del:deleteSel,
@@ -146,16 +146,25 @@ export function roomPanel(r){
     <div class="actions"><button class="btn" id="back">${tr('← 返回总览','← Back to overview')}</button></div></section>`;
 }
 export function bindRoomPanel(){
-  const id = ui.sel.id;
-  $('#rName').onchange = e => mutate(() => state.rooms[id].name = e.target.value.trim() || state.rooms[id].name);
-  document.querySelectorAll('#panel [data-mat]').forEach(b => b.onclick = () => {
+  const id = ui.sel?.id;
+  if (!id || !state.rooms[id]) return;
+  const rName = $('#rName');
+  if (rName) rName.onchange = e => mutate(() => state.rooms[id].name = e.target.value.trim() || state.rooms[id].name);
+  document.querySelectorAll('#panel [data-mat]').forEach(b => b.onclick = (e) => {
+    e.stopPropagation();
+    const newMat = b.dataset.mat;
     mutate(() => {
-      state.rooms[id].mat = b.dataset.mat;
+      state.rooms[id].mat = newMat;
     });
     renderPanel();
+    if (is3D() && window.View3D?.sync) {
+      window.View3D.sync();
+    }
+    toast(tr(`تم تطبيق أرضية ${nm(MATS[newMat].name)} على ${nm(state.rooms[id].name)}`, `Applied ${nm(MATS[newMat].name)} flooring to ${nm(state.rooms[id].name)}`));
   });
   document.querySelectorAll('#panel tr[data-fid]').forEach(tr => tr.onclick = () => select({kind:'furn', id:tr.dataset.fid}));
-  $('#back').onclick = () => select(null);
+  const backBtn = $('#back');
+  if (backBtn) backBtn.onclick = () => select(null);
 }
 
 export function furnPanel(f){

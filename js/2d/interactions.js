@@ -268,6 +268,7 @@ function endDrag(cancel){
   if (d.kind === 'pan'){
     if (!cancel && !d.moved && ui.tool === 'select') {
       select(d.room ? { kind: 'room', id: d.room } : null);
+      if (d.room) drawer('panel', true);
     }
     return;
   }
