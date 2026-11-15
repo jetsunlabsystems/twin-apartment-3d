@@ -2,7 +2,7 @@
 import { $, COARSE, esc, fmt, area, shade } from '../config.js';
 import { tr, nm } from '../i18n.js';
 import { BOUNDS, WALLS, WINS, DOORS, SLIDES, ROOMS } from '../data/floorplan.js';
-import { MATS } from '../data/materials.js';
+import { MATS, WALL_PAINTS } from '../data/materials.js';
 import { state, ui, view, getF, aabb } from './state.js';
 import { renderPanel } from '../ui/panels.js';
 
@@ -149,7 +149,10 @@ export function furnSVG(t,w,d,c){
 const NOLABEL = ['plant','floorlamp','sidetable','barstool','beanbag'];
 export function renderRooms(){
   let s = '';
-  ROOMS.forEach(r => s += `<polygon class="room" data-room="${r.id}" points="${r.poly.map(p=>p.join(',')).join(' ')}" fill="url(#m-${state.rooms[r.id].mat})"/>`);
+  ROOMS.forEach(r => {
+    const pSw = WALL_PAINTS[state.rooms[r.id]?.wallMat || 'alabaster']?.sw || '#ded7cb';
+    s += `<polygon class="room" data-room="${r.id}" points="${r.poly.map(p=>p.join(',')).join(' ')}" fill="url(#m-${state.rooms[r.id].mat})" stroke="${pSw}" stroke-width="40" stroke-linejoin="round" opacity="0.95"/>`;
+  });
   const sill = ([a,b,c,d]) => `<rect x="${a}" y="${b}" width="${c-a}" height="${d-b}" fill="#e2dacb" stroke="#b9b0a0" stroke-width="1" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
   DOORS.forEach(d => s += sill(d.rect)); SLIDES.forEach(d => s += sill(d.rect));
   $('#gRooms').innerHTML = s;

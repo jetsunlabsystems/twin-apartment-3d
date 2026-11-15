@@ -191,6 +191,26 @@ async function runQA() {
   });
   console.log('[QA] 3D Floor Material Update Result:', res3DMat.result.value);
 
+  // 5b. Test Wall Paint Selection in 3D Mode
+  console.log('[QA] Changing wall paint while in 3D mode (to royal navy)...');
+  const res3DPaint = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const curId = window.ui.sel?.id;
+      if (!curId) return { error: 'No room selected' };
+      const navyBtn = document.querySelector('#panel [data-paint="navy"]');
+      if (navyBtn) {
+        navyBtn.click();
+        return {
+          roomId: curId,
+          updatedWallMat: window.state.rooms[curId].wallMat
+        };
+      }
+      return { error: 'Navy paint button not found' };
+    })()`,
+    returnByValue: true
+  });
+  console.log('[QA] 3D Wall Paint Update Result:', res3DPaint.result.value);
+
   await new Promise(r => setTimeout(r, 1500));
 
   // 6. Capture 3D Screenshot with updated floor and labels

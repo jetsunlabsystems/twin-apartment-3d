@@ -5,7 +5,7 @@ import { defaultFurniture } from '../data/default-furniture.js';
 
 export function defaultState() {
   const rooms = {};
-  ROOMS.forEach(r => (rooms[r.id] = { name: r.name, mat: r.mat }));
+  ROOMS.forEach(r => (rooms[r.id] = { name: r.name, mat: r.mat, wallMat: r.wallMat || 'alabaster' }));
   return {
     furniture: defaultFurniture(),
     rooms,
@@ -25,6 +25,11 @@ export function load() {
 export function fixState(s) {
   const d = defaultState();
   s.rooms = Object.assign(d.rooms, s.rooms || {});
+  ROOMS.forEach(r => {
+    if (s.rooms[r.id] && !s.rooms[r.id].wallMat) {
+      s.rooms[r.id].wallMat = r.wallMat || 'alabaster';
+    }
+  });
   s.demolished = s.demolished || [];
   s.measures = s.measures || [];
   return s;

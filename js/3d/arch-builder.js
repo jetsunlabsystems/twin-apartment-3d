@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { BOUNDS, WALLS, WINS, DOORS, SLIDES, ROOMS } from '../data/floorplan.js';
 import { floorMat } from './textures.js';
+import { WALL_PAINTS } from '../data/materials.js';
 import { wx, wz, M, H, box, cyl, mat, metal, shapeOf } from './primitives.js';
 
 export const doors = [];
@@ -33,6 +34,58 @@ export const glassMat = new THREE.MeshPhysicalMaterial({
   depthWrite: false,
   side: THREE.DoubleSide
 });
+
+const paintMatCache = {};
+export function getWallPaintMat(key) {
+  if (!paintMatCache[key]) {
+    const p = WALL_PAINTS[key] || WALL_PAINTS.alabaster;
+    paintMatCache[key] = mat(p.sw, { roughness: p.roughness || 0.88 });
+  }
+  return paintMatCache[key];
+}
+
+function pointInPoly(x, y, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function roomAtPoint(x, y) {
+  for (let i = 0; i < ROOMS.length; i++) {
+    if (pointInPoly(x, y, ROOMS[i].poly)) return ROOMS[i].id;
+  }
+  return null;
+}
+
+const wallRoomCache = new Map();
+function getWallRooms(rect) {
+  const key = `${rect[0]},${rect[1]},${rect[2]},${rect[3]}`;
+  if (!wallRoomCache.has(key)) {
+    const [x0, y0, x1, y1] = rect;
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    wallRoomCache.set(key, {
+      east: roomAtPoint(x1 + 60, cy),
+      west: roomAtPoint(x0 - 60, cy),
+      south: roomAtPoint(cx, y1 + 60),
+      north: roomAtPoint(cx, y0 - 60)
+    });
+  }
+  return wallRoomCache.get(key);
+}
+
+export function getWallMaterials(rect, state) {
+  const r = getWallRooms(rect);
+  const mEast = r.east ? getWallPaintMat(state?.rooms?.[r.east]?.wallMat || 'alabaster') : wallMat;
+  const mWest = r.west ? getWallPaintMat(state?.rooms?.[r.west]?.wallMat || 'alabaster') : wallMat;
+  const mSouth = r.south ? getWallPaintMat(state?.rooms?.[r.south]?.wallMat || 'alabaster') : wallMat;
+  const mNorth = r.north ? getWallPaintMat(state?.rooms?.[r.north]?.wallMat || 'alabaster') : wallMat;
+  return [mEast, mWest, capMat, wallMat, mSouth, mNorth];
+}
 
 /**
  * Builds a wall cuboid with black architectural cap on the top (+Y) face
@@ -187,8 +240,9 @@ export function buildArch(ctx) {
         }
       }
     } else {
-      // Solid wall with crisp black top cap
-      wallBox(w, 0, top, archUp, opt);
+      // Solid wall with crisp black top cap and room-specific interior paint
+      const customMats = getWallMaterials(w, state);
+      wallBox(w, 0, top, archUp, opt, customMats);
     }
 
     colliders.push([wx(w[0]), wz(w[1]), wx(w[2]), wz(w[3])]);
@@ -197,7 +251,10 @@ export function buildArch(ctx) {
   // Wall lintels above door openings (only visible when top > lintel height)
   [...DOORS.map(d => [d.rect, 2.1]), ...SLIDES.map(s => [s.rect, s.v ? 2.4 : 2.1])]
     .forEach(([r, h]) => {
-      if (top > h) wallBox(r, h, top, archUp, opt);
+      if (top > h) {
+        const lintelMats = getWallMaterials(r, state);
+        wallBox(r, h, top, archUp, opt, lintelMats);
+      }
     });
 
   // -------------------------------------------------------------
@@ -207,8 +264,9 @@ export function buildArch(ctx) {
     const sill = r[4] !== undefined ? r[4] : 0.9;
     const head = r[5] !== undefined ? r[5] : 2.4;
 
-    // Solid wall below sill
-    wallBox(r, 0, Math.min(sill, top), archUp, opt);
+    // Solid wall below sill with room-specific interior paint
+    const winWallMats = getWallMaterials(r, state);
+    wallBox(r, 0, Math.min(sill, top), archUp, opt, winWallMats);
 
     // Solid wall above head (full walls mode)
     if (top > head) wallBox(r, head, top, archUp, opt);
