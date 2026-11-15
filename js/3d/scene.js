@@ -21,7 +21,7 @@ const FOV = 58;
 const SW = () => stage?.clientWidth || window.innerWidth;
 const SH = () => stage?.clientHeight || window.innerHeight;
 
-export const opt = { cut: 1.2, furn: true, labels: true, night: false, hour: 10, mode: 'orbit' };
+export const opt = { cut: 2.8, furn: true, labels: true, night: false, hour: 10, mode: 'orbit' };
 
 let inited = false, active = false, raf = 0, anim = null, fly = null;
 let renderer, labelRenderer, scene, camera, orbit, walkCtl, hemi, sun, ground;
