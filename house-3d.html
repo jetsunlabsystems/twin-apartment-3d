@@ -6,6 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -348,36 +349,55 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
 
 <script>
 /* ======================= 多语言 / Localization (Arabic Tajawal Default) ======================= */
+const LANG_KEY = 'twin-apartment-lang';
 const LANG_MAP = {
   zh: 'العربية',
   en: 'English'
 };
-let curLang = localStorage.getItem('app_lang') || 'zh';
+let LANG = (() => {
+  try {
+    const l = localStorage.getItem(LANG_KEY);
+    return (l === 'en' || l === 'zh') ? l : 'zh';
+  } catch(e) {
+    return 'zh';
+  }
+})();
+let curLang = LANG;
 
 function tr(arText, enText){
-  return curLang === 'en' ? (enText || arText) : arText;
+  return (LANG === 'en' || curLang === 'en') ? (enText || arText) : arText;
 }
 
 function nm(o){
   if (!o) return '';
   if (typeof o === 'string') return o;
-  return curLang === 'en' ? (o.en || o.zh || '') : (o.zh || o.en || '');
+  return (LANG === 'en' || curLang === 'en') ? (o.en || o.zh || '') : (o.zh || o.en || '');
 }
 
 function setLang(l){
-  curLang = (l === 'zht' || l === 'en') ? 'en' : 'zh';
-  localStorage.setItem('app_lang', curLang);
-  document.documentElement.lang = curLang === 'zh' ? 'ar' : 'en';
-  document.documentElement.dir = curLang === 'zh' ? 'rtl' : 'ltr';
+  LANG = (l === 'zht' || l === 'en') ? 'en' : 'zh';
+  curLang = LANG;
+  try { localStorage.setItem(LANG_KEY, LANG); } catch(e) {}
+  document.documentElement.lang = LANG === 'zh' ? 'ar' : 'en';
+  document.documentElement.dir = LANG === 'zh' ? 'rtl' : 'ltr';
   applyStaticLang();
-  renderProps();
-  renderPlan();
+  if (typeof syncFullscreen === 'function') syncFullscreen();
+  if (typeof syncModeHint === 'function') syncModeHint();
+  if (typeof syncPaneBtns === 'function') syncPaneBtns();
+  if (typeof renderProps === 'function') renderProps();
+  if (typeof renderPlan === 'function') renderPlan();
+  if (typeof buildLib === 'function') buildLib();
+  if (typeof renderOpenings === 'function') renderOpenings();
+  if (typeof renderAll === 'function') renderAll();
   if (typeof buildFurn === 'function') buildFurn();
   if (typeof buildLabels === 'function') buildLabels();
   if (typeof updateFlyRoomList === 'function') updateFlyRoomList();
-  renderLib();
-  updateHelpTable();
-  updateHints();
+  if (window.View3D?.relang) window.View3D.relang();
+  const tipEl = document.querySelector('#tip');
+  if (tipEl && typeof TIPS === 'function') {
+    const mode = typeof viewMode !== 'undefined' ? viewMode : '2d';
+    tipEl.textContent = TIPS()[mode] || '';
+  }
 }
 
 function applyStaticLang(){
@@ -3930,7 +3950,7 @@ function renderOpenings(){
   s += `<circle cx="6590" cy="14550" r="45" fill="#0f172a"/>`;
   s += `<text x="6590" y="13350" font-family="'Tajawal', sans-serif" font-size="160" font-weight="700" fill="#0f172a" text-anchor="middle">صعود UP</text>`;
 
-  $('#gOpenings').innerHTML = s;
+  $('#gOpen').innerHTML = s;
 }
 function renderLabels(){
   const g = $('#gLabels');
@@ -4642,13 +4662,6 @@ new ResizeObserver(() => {
   lastW = w; lastH = h;
 }).observe(svg);
 
-function setLang(l){
-  LANG = l; try { localStorage.setItem(LANG_KEY, l); } catch(e) {}
-  applyStaticLang(); syncFullscreen(); syncModeHint(); syncPaneBtns();
-  buildLib(); renderOpenings(); renderAll();
-  $('#tip').textContent = TIPS()[viewMode];
-  window.View3D?.relang();
-}
 $('#langSel').onclick = e => { const l = e.target.closest('[data-lang]')?.dataset.lang; if (l && l !== LANG) setLang(l); };
 
 applyStaticLang(); syncFullscreen();
