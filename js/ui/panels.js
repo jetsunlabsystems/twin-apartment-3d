@@ -20,7 +20,8 @@ export function renderPanel(){
 export function overviewPanel(){
   const rows = ROOMS.map(r => {
     const st = state.rooms[r.id];
-    return `<tr class="click" data-room="${r.id}"><td><span class="sw" style="background:${MATS[st.mat].sw}"></span>${esc(nm(st.name))}${r.counted===false?' <span class="muted">*</span>':''}</td>
+    const matSw = MATS[st?.mat]?.sw || '#d8c2a2';
+    return `<tr class="click" data-room="${r.id}"><td><span class="sw" style="background:${matSw}"></span>${esc(nm(st?.name || r.name))}${r.counted===false?' <span class="muted">*</span>':''}</td>
       <td class="r">${fmt(area(r.poly))} m²</td></tr>`;
   }).join('');
   const tot = ROOMS.filter(r => r.counted !== false).reduce((a,r) => a + area(r.poly), 0);

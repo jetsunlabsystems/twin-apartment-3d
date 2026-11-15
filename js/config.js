@@ -2,7 +2,7 @@
 export const PX_MM = 25.4 / 96;                           // 1 CSS px = 0.2646 mm
 export const COARSE = typeof matchMedia !== 'undefined' ? matchMedia('(pointer:coarse)').matches : false; // Touch devices
 export const TAP = COARSE ? 9 : 4;                        // Tap threshold in px
-export const STORE = 'twin-apartment-luxury-v3';          // LocalStorage state key
+export const STORE = 'twin-apartment-luxury-cad-v4';          // LocalStorage state key
 export const LANG_KEY = 'twin-apartment-lang';
 export const PANES_KEY = 'twin-apartment-panes';
 
