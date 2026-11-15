@@ -83,6 +83,28 @@ async function runQA() {
   fs.writeFileSync(path2d, Buffer.from(ss2d.data, 'base64'));
   console.log(`[QA] Saved 2D view to: ${path2d}`);
 
+  // 1b. Zoom to Stairs and Lightwell in 2D
+  console.log('[QA] Zooming in on Lightwell and Stair Core in 2D...');
+  await send('Runtime.evaluate', {
+    expression: `(() => {
+      const svg = document.querySelector('#plan');
+      if (svg) svg.setAttribute('viewBox', '5200 9200 5400 9000');
+    })()`
+  });
+  await new Promise(r => setTimeout(r, 800));
+  const ss2dStairs = await send('Page.captureScreenshot', { format: 'png' });
+  const path2dStairs = path.join(ARTIFACT_DIR, 'qa_2d_stairs_zoom.png');
+  fs.writeFileSync(path2dStairs, Buffer.from(ss2dStairs.data, 'base64'));
+  console.log(`[QA] Saved 2D Stairs Zoom view to: ${path2dStairs}`);
+
+  // Reset 2D View
+  await send('Runtime.evaluate', {
+    expression: `(() => {
+      const svg = document.querySelector('#plan');
+      if (svg) svg.removeAttribute('viewBox');
+    })()`
+  });
+
   // 2. Test 2D Room Selection and Floor Material Change
   console.log('[QA] Selecting Room 1 in 2D and switching floor to Walnut...');
   const res2D = await send('Runtime.evaluate', {
@@ -175,6 +197,19 @@ async function runQA() {
   const patht = path.join(ARTIFACT_DIR, 'qa_3d_terrace.png');
   fs.writeFileSync(patht, Buffer.from(sst.data, 'base64'));
   console.log(`[QA] Saved 3D terrace view to: ${patht}`);
+
+  // 7b. Focus Camera on Stair Core & Elevator in 3D
+  console.log('[QA] Selecting Stair Core in 3D to fly camera to it...');
+  await send('Runtime.evaluate', {
+    expression: `(() => {
+      window.select({ kind: 'room', id: 'stair_core' });
+    })()`
+  });
+  await new Promise(r => setTimeout(r, 2500));
+  const sss = await send('Page.captureScreenshot', { format: 'png' });
+  const paths = path.join(ARTIFACT_DIR, 'qa_3d_stairs_zoom.png');
+  fs.writeFileSync(paths, Buffer.from(sss.data, 'base64'));
+  console.log(`[QA] Saved 3D Stairs view to: ${paths}`);
 
   // 8. Test Furniture Selection and Full Tajawal Text without Truncation in FAB
   console.log('[QA] Selecting TV Stand (وحدة تلفزيون جدارية فاخرة) to verify FAB and panel text...');

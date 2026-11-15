@@ -199,28 +199,34 @@ export function renderOpenings(){
     else { const L = x1-x0, m = (y0+y1)/2; s += `<rect x="${x0}" y="${m-45}" width="${L*.55}" height="40" fill="#fff" ${DS}/><rect x="${x1-L*.55}" y="${m+5}" width="${L*.55}" height="40" fill="#fff" ${DS}/>`; }
   });
 
-  // 2D Elevator Shaft & Cabin
-  s += `<rect x="7140" y="11900" width="1520" height="1500" fill="#f8fafc" stroke="#1e293b" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
-  s += `<line x1="7140" y1="11900" x2="8660" y2="13400" stroke="#94a3b8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
-  s += `<line x1="8660" y1="11900" x2="7140" y2="13400" stroke="#94a3b8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
-  s += `<rect x="7240" y="12000" width="1320" height="1300" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="8 4" vector-effect="non-scaling-stroke"/>`;
-  s += `<text x="7900" y="12720" font-family="'Tajawal', sans-serif" font-size="190" font-weight="700" fill="#0284c7" text-anchor="middle">مصعد ELEVATOR</text>`;
+  // 2D Lightwell (منور) Shaft Crossing
+  s += `<line x1="5840" y1="9660" x2="9960" y2="13230" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="8 6" vector-effect="non-scaling-stroke"/>`;
+  s += `<line x1="9960" y1="9660" x2="5840" y2="13230" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="8 6" vector-effect="non-scaling-stroke"/>`;
+  s += `<text x="7900" y="11445" font-family="'Tajawal', sans-serif" font-size="220" font-weight="700" fill="#94a3b8" text-anchor="middle">منور SHAFT</text>`;
 
-  // 2D Staircase Treads & Climb Arrows
-  for (let i = 0; i <= 8; i++) {
-    const y = 14650 - 400 - i * 300;
+  // 2D Staircase North Mid-Landing
+  s += `<rect x="6040" y="13450" width="3720" height="900" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+  s += `<text x="7900" y="13930" font-family="'Tajawal', sans-serif" font-size="160" font-weight="600" fill="#64748b" text-anchor="middle">استراحة وسطية MID-LANDING</text>`;
+
+  // 2D Elevator Shaft & Cabin
+  s += `<rect x="7140" y="14350" width="1520" height="2150" fill="#f8fafc" stroke="#1e293b" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  s += `<line x1="7140" y1="14350" x2="8660" y2="16500" stroke="#94a3b8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+  s += `<line x1="8660" y1="14350" x2="7140" y2="16500" stroke="#94a3b8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+  s += `<rect x="7240" y="14450" width="1320" height="1950" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="8 4" vector-effect="non-scaling-stroke"/>`;
+  s += `<text x="7900" y="15475" font-family="'Tajawal', sans-serif" font-size="180" font-weight="700" fill="#0284c7" text-anchor="middle">مصعد ELEVATOR</text>`;
+
+  // 2D Staircase Treads (Flight 1 West & Flight 2 East)
+  for (let i = 0; i <= 9; i++) {
+    const y = 14350 + i * 314;
     s += `<line x1="6040" y1="${y}" x2="7140" y2="${y}" stroke="#64748b" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
     s += `<line x1="8660" y1="${y}" x2="9760" y2="${y}" stroke="#64748b" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
   }
-  // Mid Landing box
-  s += `<rect x="6040" y="11350" width="3720" height="500" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
-  s += `<text x="7900" y="11650" font-family="'Tajawal', sans-serif" font-size="160" font-weight="600" fill="#64748b" text-anchor="middle">استراحة وسطية MID-LANDING</text>`;
 
-  // Climb arrows
-  s += `<line x1="6590" y1="14550" x2="6590" y2="12000" stroke="#0f172a" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
-  s += `<polygon points="6590,11880 6540,12020 6640,12020" fill="#0f172a"/>`;
-  s += `<circle cx="6590" cy="14550" r="45" fill="#0f172a"/>`;
-  s += `<text x="6590" y="13350" font-family="'Tajawal', sans-serif" font-size="160" font-weight="700" fill="#0f172a" text-anchor="middle">صعود UP</text>`;
+  // Climb arrow on Flight 1 (Climbing South to North towards Mid-Landing)
+  s += `<line x1="6590" y1="17100" x2="6590" y2="14550" stroke="#0f172a" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
+  s += `<polygon points="6590,14420 6540,14570 6640,14570" fill="#0f172a"/>`;
+  s += `<circle cx="6590" cy="17100" r="45" fill="#0f172a"/>`;
+  s += `<text x="6590" y="15800" font-family="'Tajawal', sans-serif" font-size="160" font-weight="700" fill="#0f172a" text-anchor="middle">صعود UP</text>`;
 
   $('#gOpen').innerHTML = s;
 }
@@ -248,10 +254,9 @@ export function renderDims(){
   };
   const g = $('#gDims');
   g.innerHTML =
-    chain(true,-750,0,[1580,240,2760,240,1540,240,3670]) + chain(true,-1250,0,[10270]) +
-    chain(true,11350,0,[2180,240,2160,240,5450,240,1340]) + chain(true,11850,0,[11850]) +
-    chain(false,-800,0,[3370,1580,240,2770,240,2360]) + chain(false,-1300,0,[10560]) +
-    chain(false,12750,0,[3370,240,2760,240,3950]) + chain(false,13250,0,[10560]);
+    chain(true,-750,0,[4000,240,3600,240,3600,240,4000]) + chain(true,-1250,0,[15800]) +
+    chain(false,-800,0,[5000,200,1940,200,4000,200,3600,200,3250,200,4800,200,2000]) + chain(false,-1400,0,[26610]) +
+    chain(false,16600,0,[5000,200,1940,200,4000,200,3600,200,3250,200,4800,200,2000]) + chain(false,17200,0,[26610]);
   g.setAttribute('display', ui.layers.dims ? 'inline' : 'none');
 }
 

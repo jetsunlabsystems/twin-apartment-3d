@@ -410,12 +410,12 @@ function buildStairsAndElevator(group, top) {
   const treadM = mat('#c29b68', { roughness: 0.35 });         // French oak treads
   const steelM = mat('#1e242b', { roughness: 0.3, metalness: 0.8 }); // Black structural steel
 
-  // Flight 1: Climb South to North (8 steps)
+  // Flight 1: Climb South to North (9 steps)
   const stepH = 0.165, stepD = 0.28, stepW = 1.10;
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 9; i++) {
     const y = i * stepH;
     if (y + stepH > top) break;
-    const z = wz(14400 - i * 300);
+    const z = wz(17180 - i * 314);
     const x = wx(6590);
 
     // Marble riser
@@ -424,18 +424,18 @@ function buildStairsAndElevator(group, top) {
     group.add(box(stepW + 0.04, 0.035, stepD + 0.03, treadM, x, y + stepH - 0.035, z));
   }
 
-  // Mid Landing at ~1.35m
+  // Mid Landing at ~1.48m
   if (top > 1.35) {
-    const landY = Math.min(1.35, top);
-    group.add(box(M(3720), 0.18, M(1200), stairM, wx(7900), landY - 0.18, wz(11600)));
-    group.add(box(M(3720), 0.035, M(1200), treadM, wx(7900), landY - 0.035, wz(11600)));
+    const landY = Math.min(1.48, top);
+    group.add(box(M(3720), 0.18, M(900), stairM, wx(7900), landY - 0.18, wz(13900)));
+    group.add(box(M(3720), 0.035, M(900), treadM, wx(7900), landY - 0.035, wz(13900)));
   }
 
-  // Flight 2: Climb North to South from Landing
-  for (let i = 0; i < 8; i++) {
-    const y = 1.35 + i * stepH;
+  // Flight 2: Climb North to South from Landing (9 steps)
+  for (let i = 0; i < 9; i++) {
+    const y = 1.48 + i * stepH;
     if (y + stepH > top) break;
-    const z = wz(12200 + i * 300);
+    const z = wz(14350 + i * 314);
     const x = wx(9210);
 
     group.add(box(stepW, stepH, 0.04, stairM, x, y, z - stepD / 2));
@@ -444,13 +444,13 @@ function buildStairsAndElevator(group, top) {
 
   // Stainless steel stair handrail
   const railH = Math.min(2.4, top);
-  const hr1 = cyl(0.018, 0.018, 2.6, metal('#e2e8f0'), wx(6040 + 0.05), railH / 2, wz(13200));
+  const hr1 = cyl(0.018, 0.018, 3.0, metal('#e2e8f0'), wx(6040 + 0.05), railH / 2, wz(15765));
   hr1.rotation.x = 0.52;
   group.add(hr1);
 
   // Panoramic Glass Elevator Enclosure
-  const elW = M(1520), elD = M(1500), elH = Math.min(2.8, top);
-  const elCx = wx(7900), elCz = wz(12650);
+  const elW = M(1520), elD = M(2150), elH = Math.min(2.8, top);
+  const elCx = wx(7900), elCz = wz(15425);
 
   // Four structural steel corner columns
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
