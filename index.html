@@ -198,7 +198,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
   .app.hide-lib.hide-panel{grid-template-columns:0 minmax(0,1fr) 0}
   .app.hide-lib aside.lib,.app.hide-panel aside.right{overflow:hidden;border:0}
   aside{overflow-x:hidden}
-  aside.lib>div{min-width:220px} #panel{min-width:284px}   /* 收起动画中内容不被挤压变形 */
+  aside.lib>div{min-width:220px} #panel{min-width:284px}   /* Prevent content squeezing during collapse */
 }
 .narrow-only{display:none!important}
 @media (max-width:1100px){
@@ -343,499 +343,64 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
 <div id="toast"></div>
 
 <script>
-/* ======================= 多语言（中文 / English，默认中文） ======================= */
-const LANG_KEY = 'huxing-lang';
-const LANGS = ['zh', 'zht', 'en'];             // 简体 / 繁體（台湾用字）/ English
-let LANG = (() => { try { const l = localStorage.getItem(LANG_KEY); return LANGS.includes(l) ? l : 'zh'; } catch(e) { return 'zh'; } })();
-// 简 → 繁：先按词替换一字多义的字，再逐字查表（表由 OpenCC s2tw 按本页用到的字生成）
-const S2T_PHRASES = [['布置','佈置'],['布局','佈局'],['台面','檯面'],['复制','複製']];
-const S2T = new Map(('与與两兩个個为為书書于於仅僅从從价價会會传傳体體余餘侧側倾傾储儲儿兒关關内內写寫净淨准準击擊则則刚剛删刪制製办辦动動势勢区區单單占佔卧臥卫衛厅廳历歷压壓厨廚双雙发發变變叶葉后後吗嗎听聽启啟哑啞围圍图圖圆圓场場坐座块塊垫墊墙牆处處备備复復头頭妆妝婴嬰实實宽寬对對导導层層屉屜属屬岛島带帶干乾并並库庫应應开開当當径徑态態总總悬懸懒懶户戶护護拟擬择擇挂掛挡擋挤擠损損换換据據摆擺摇搖撑撐数數无無时時显顯暂暫机機杂雜杆桿条條来來松鬆构構柜櫃标標栈棧栏欄样樣梁樑棱稜椭橢横橫橱櫥气氣没沒注註浅淺测測浏瀏游遊滚滾满滿灯燈灵靈点點热熱状狀独獨环環现現电電画畫监監盖蓋盘盤砖磚确確离離积積称稱竖豎筑築签籤类類约約级級线線结結绕繞绘繪给給统統继繼绿綠缀綴编編缝縫缩縮网網联聯脚腳获獲虚虛装裝见見视視览覽触觸计計认認让讓议議记記设設识識译譯该該语語请請读讀调調负負败敗质質贴貼赶趕转轉轮輪软軟轴軸轻輕载載较較辅輔辑輯边邊过過这這进進远遠适適选選邻鄰里裡针針钢鋼钮鈕铰鉸铺鋪销銷锁鎖键鍵镜鏡长長门門闭閉闲閒间間阅閱阳陽阴陰阶階随隨隐隱静靜页頁顶頂项項顺順颜顏飘飄飞飛马馬鸟鳥齐齊龙龍').match(/../gu).map(p => [...p]));
-const s2t = s => S2T_PHRASES.reduce((a, [f, t]) => a.replaceAll(f, t), s).replace(/[\u3400-\u9fff]/g, c => S2T.get(c) || c);
-const tr = (zh, en) => LANG === 'en' ? en : LANG === 'zht' ? s2t(zh) : zh;
-// 内置的房间 / 材料 / 家具名称存的是中文；英文界面下显示译名，用户自己改过的名称原样显示
+/* ======================= اللغة (العربية / English - الافتراضي: العربية) ======================= */
+const LANG_KEY = 'twin-apartment-lang-ar-v2';
+const LANGS = ['ar', 'en'];
+let LANG = (() => { try { const l = localStorage.getItem(LANG_KEY); return LANGS.includes(l) ? l : 'ar'; } catch(e) { return 'ar'; } })();
+
+const tr = (ar, en) => LANG === 'en' ? en : ar;
+
 const NAMES_EN = {
-  '主卧室':'Master Bedroom', '主卫浴':'Master Bath', '小孩房':"Kids' Room", '客卫浴':'Guest Bath', '洗衣阳台':'Laundry Balcony',
-  '子女房':"Children's Room", '厨房':'Kitchen', '餐厅':'Dining', '过道':'Hallway', '客厅':'Living Room', '休闲阳台':'Leisure Balcony',
-  '主卧飘窗':'Master Bay Window', '子女房飘窗':"Children's Bay Window",
-  '橡木地板':'Oak Flooring', '胡桃木地板':'Walnut Flooring', '800 地砖':'800 Tile', '600 地砖':'600 Tile', '大理石':'Marble',
-  '300 防滑砖':'300 Anti-slip Tile', '水磨石':'Terrazzo', '满铺地毯':'Wall-to-wall Carpet',
-  '卧室':'Bedroom', '餐厨':'Dining & Kitchen', '卫浴':'Bathroom', '家电':'Appliances', '书房 · 休闲':'Study & Leisure',
-  '双人床 1.8m':'Double Bed 1.8m', '双人床 1.5m':'Double Bed 1.5m', '双人床':'Double Bed', '单人床':'Single Bed', '婴儿床':'Crib',
-  '床头柜':'Nightstand', '衣柜':'Wardrobe', '小衣柜':'Small Wardrobe', '梳妆台':'Dresser', '书桌':'Desk', '椅子':'Chair',
-  '书架':'Bookshelf', '飘窗垫':'Bay Cushion', '三人沙发':'3-Seat Sofa', '双人沙发':'Loveseat', '转角沙发':'Corner Sofa',
-  '单人沙发':'Armchair', '懒人沙发':'Beanbag', '茶几':'Coffee Table', '边几':'Side Table', '电视柜':'TV Stand', '地毯':'Rug',
-  '鞋柜':'Shoe Cabinet', '玄关柜':'Entry Cabinet', '落地灯':'Floor Lamp', '绿植':'Plant', '大绿植':'Large Plant',
-  '餐桌':'Dining Table', '六人餐桌':'6-Seat Dining Table', '圆桌':'Round Table', '餐椅':'Dining Chair', '岛台':'Kitchen Island',
-  '吧椅':'Bar Stool', '橱柜台面':'Kitchen Counter', '燃气灶':'Gas Stove', '水槽':'Sink', '冰箱':'Fridge', '餐边柜':'Sideboard',
-  '马桶':'Toilet', '浴室柜':'Vanity', '双盆浴室柜':'Double Vanity', '淋浴房':'Shower', '淋浴区':'Shower Area', '浴缸':'Bathtub',
-  '洗衣机':'Washer', '洗衣池':'Laundry Sink', '电热水器':'Water Heater', '储物柜':'Storage Cabinet', '65 寸电视':'65" TV',
-  '55 寸电视':'55" TV', '对开门冰箱':'French-door Fridge', '柜机空调':'Floor AC', '挂机空调':'Wall AC', '洗碗机':'Dishwasher',
-  '蒸烤箱高柜':'Oven Tower', '烘干机':'Dryer', '空气净化器':'Air Purifier', '长书桌':'Long Desk', '办公椅':'Office Chair',
-  '大书架':'Large Bookshelf', '立式钢琴':'Upright Piano', '跑步机':'Treadmill', '阅读椅':'Reading Chair', '茶桌':'Tea Table', '休闲椅':'Lounge Chair',
+  'غرف النوم':'Bedrooms', 'الصالون والمعيشة':'Living Room', 'المطبخ وتناول الطعام':'Dining & Kitchen',
+  'الحمامات':'Bathrooms', 'الأجهزة المنزلية':'Appliances', 'المكتب والترفيه':'Study & Leisure',
+  'خشب باركيه بلوط':'Oak Flooring', 'خشب باركيه جوز فاخر':'Walnut Flooring', 'بورسلين 80×80':'800 Porcelain Tile',
+  'سيراميك 60×60':'600 Ceramic Tile', 'رخام كلكتا إيطالي فاخر':'Calacatta Italian Marble', 'بلاط حجري مانع للانزلاق':'Anti-slip Stone Tile',
+  'تيرازو مصقول':'Polished Terrazzo', 'موكيت سجاد فاخر':'Luxury Carpet',
+  'نوم رئيسية (Master L)':'Master Bedroom (L)', 'حمام ماستر (Bath L)':'Master Bath (L)', 'ملابس (Closet L)':'Walk-in Closet (L)',
+  'نوم 2 (Bed 2 L)':'Bedroom 2 (L)', 'غسيل (Laundry L)':'Laundry Room (L)', 'حمام عائلي (Bath L)':'Family Bath (L)',
+  'نوم 1 (Bed 1 L)':'Bedroom 1 (L)', 'معيشة (Living L)':'Living Room (L)', 'مطبخ (Kitchen L)':'Kitchen (L)',
+  'حمام ضيوف (Guest Bath L)':'Guest Bath (L)', 'استقبال (Reception L)':'Reception Salon (L)', 'تراس (Terrace L)':'Terrace (L)',
+  'نوم رئيسية (Master R)':'Master Bedroom (R)', 'حمام ماستر (Bath R)':'Master Bath (R)', 'ملابس (Closet R)':'Walk-in Closet (R)',
+  'نوم 2 (Bed 2 R)':'Bedroom 2 (R)', 'غسيل (Laundry R)':'Laundry Room (R)', 'حمام عائلي (Bath R)':'Family Bath (R)',
+  'نوم 1 (Bed 1 R)':'Bedroom 1 (R)', 'معيشة (Living R)':'Living Room (R)', 'مطبخ (Kitchen R)':'Kitchen (R)',
+  'حمام ضيوف (Guest Bath R)':'Guest Bath (R)', 'استقبال (Reception R)':'Reception Salon (R)', 'تراس (Terrace R)':'Terrace (R)',
+  'منور (Lightwell)':'Lightwell', 'درج ومصعد (Stairs & Elevator)':'Stairs & Elevator Core',
+  'سرير ماستر 1.8m':'Master Bed 1.8m', 'سرير 1.5m':'Bed 1.5m', 'سرير مفرد':'Single Bed',
+  'كومودينو':'Nightstand', 'دولاب ملابس':'Wardrobe', 'مكتب دراسة':'Study Desk', 'كرسي':'Chair',
+  'كنبة 3 مقاعد':'3-Seat Sofa', 'طاولة رخام':'Marble Coffee Table', 'سجادة صالون فاخرة':'Luxury Rug',
+  'كنبة زاوية عائلية':'Family Corner Sofa', 'طقم استقبال 3 مقاعد':'Reception Sofa 3-Seat',
+  'رخام مطبخ كاونتر':'Kitchen Countertop', 'بوتاجاز غاز':'Gas Stove', 'حوض غسيل':'Kitchen Sink', 'ثلاجة عائلية':'Family Refrigerator',
+  'طاولة طعام 4 كراسي':'Dining Table 4-Seat', 'طاولة طعام 6 مقاعد':'Dining Table 6-Seat', 'طاولة طعام دائرية':'Round Dining Table',
+  'كرسي طعام':'Dining Chair', 'جزيرة مطبخ رخامية':'Kitchen Island', 'كرسي بار مرتفع':'Bar Stool',
+  'مرحاض معلق':'Wall-hung Toilet', 'وحدة حوض حمام':'Bathroom Vanity', 'وحدة حوض مزدوجة':'Double Vanity',
+  'كابينة شاور':'Glass Shower', 'حوض استحمام بانيو':'Bathtub', 'غسالة ملابس':'Washing Machine', 'سخان مياه':'Water Heater',
+  'شاشة تلفزيون 65 بوصة':'65" 4K TV', 'شاشة تلفزيون 55 بوصة':'55" 4K TV', 'مكيف سبليت':'Split AC', 'مكيف دولابي عمودي':'Tower AC',
+  'غسالة أطباق':'Dishwasher', 'دولاب أفران مدمجة':'Built-in Oven Tower', 'مجفف ملابس':'Dryer', 'منقي هواء':'Air Purifier',
+  'طاولة مكتب عمل':'Office Desk', 'كرسي مكتب تنفيذي':'Executive Chair', 'خزانة كتب جدارية':'Wall Bookshelf',
+  'بيانو كلاسيكي':'Upright Piano', 'جهاز سير رياضي':'Treadmill', 'كرسي قراءة واسترخاء':'Reading Chair',
+  'طاولة شاي وجلسة':'Tea Table', 'كرسي استرخاء شيزلونج':'Lounge Chair',
+  'كامل المبنى':'Whole Building'
 };
-const nm = s => LANG === 'en' ? (NAMES_EN[s] ?? s) : LANG === 'zht' ? s2t(s) : s;
-// 静态文案：元素上写 data-en / data-en-title，中文原文首次切换时存进 dataset
+
+const nm = s => LANG === 'en' ? (NAMES_EN[s] ?? s) : s;
+
 function applyStaticLang(){
-  document.documentElement.lang = {zh:'zh-CN', zht:'zh-TW', en:'en'}[LANG];
-  document.title = tr('户型装修设计', 'Floor Plan Designer');
-  document.querySelectorAll('[data-en]').forEach(el => { el.dataset.zh ??= el.textContent; el.textContent = tr(el.dataset.zh, el.dataset.en); });
-  document.querySelectorAll('[data-en-title]').forEach(el => { el.dataset.zhTitle ??= el.title; el.title = tr(el.dataset.zhTitle, el.dataset.enTitle); });
-  document.querySelectorAll('#langSel [data-lang]').forEach(b => { const on = b.dataset.lang === LANG; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-}
-
-/* ============================================================
- *  户型数据（单位 mm，原点 = 左侧外墙内皮 / 顶部外墙内皮）
- *  所有数值均按原始户型图尺寸标注推算：
- *  上：1580/240/2760/240/1540/240/3670 = 10270
- *  下：2180/240/2160/240/5450/240/1340 = 11850
- *  左：3370/1580/240/2770/240/2360 = 10560
- *  右：3370/240/2760/240/3950 = 10560
- * ============================================================ */
-// 墙体：[x0,y0,x1,y1,类型]  b=承重(黑) e=外墙 n=可拆非承重 low=矮墙
-const WALLS = [
-  [-200, -200, 1200, 0, "b"],
-  [2600, -200, 5200, 0, "b"],
-  [6600, -200, 7900, 0, "b"],
-  [7900, -200, 9200, 0, "b"],
-  [10600, -200, 13200, 0, "b"],
-  [14600, -200, 16000, 0, "b"],
-  [-200, 0, 0, 1600, "b"],
-  [-200, 3200, 0, 8200, "b"],
-  [-200, 9800, 0, 12200, "b"],
-  [-200, 14000, 0, 15600, "b"],
-  [-200, 17000, 0, 20600, "b"],
-  [-200, 22600, 0, 24400, "b"],
-  [15800, 0, 16000, 1600, "b"],
-  [15800, 3200, 16000, 8200, "b"],
-  [15800, 9800, 16000, 12200, "b"],
-  [15800, 14000, 16000, 15600, "b"],
-  [15800, 17000, 16000, 20600, "b"],
-  [15800, 22600, 16000, 24400, "b"],
-  [0, 24200, 800, 24400, "b"],
-  [3400, 24200, 4800, 24400, "b"],
-  [6800, 24200, 7900, 24400, "b"],
-  [7900, 24200, 9000, 24400, "b"],
-  [11000, 24200, 12400, 24400, "b"],
-  [15000, 24200, 15800, 24400, "b"],
-  [0, 24400, 150, 25500, "low"],
-  [0, 25350, 4100, 25500, "low"],
-  [3950, 24400, 4100, 25500, "low"],
-  [11700, 24400, 11850, 25500, "low"],
-  [11700, 25350, 15800, 25500, "low"],
-  [15650, 24400, 15800, 25500, "low"],
-  [7800, 0, 8000, 7150, "b"],
-  [5640, 7150, 10160, 7350, "b"],
-  [5640, 7350, 5840, 8600, "b"],
-  [5640, 9800, 5840, 11000, "b"],
-  [9960, 7350, 10160, 8600, "b"],
-  [9960, 9800, 10160, 11000, "b"],
-  [5640, 10850, 10160, 11000, "b"],
-  [5840, 11000, 6040, 14850, "b"],
-  [9760, 11000, 9960, 14850, "b"],
-  [5840, 14650, 6240, 14850, "b"],
-  [7240, 14650, 8560, 14850, "b"],
-  [9560, 14650, 9960, 14850, "b"],
-  [7800, 14850, 8000, 24200, "b"],
-  [4100, 0, 4250, 5100, "n"],
-  [0, 4950, 4250, 5100, "n"],
-  [4250, 3750, 4600, 3900, "n"],
-  [5500, 3750, 7800, 3900, "n"],
-  [1950, 5100, 2050, 5600, "n"],
-  [1950, 6400, 2050, 6800, "n"],
-  [0, 6800, 2600, 6950, "n"],
-  [3600, 6800, 4250, 6950, "n"],
-  [4250, 5700, 4600, 5850, "n"],
-  [5400, 5700, 7800, 5850, "n"],
-  [4250, 7150, 4600, 7350, "n"],
-  [5400, 7150, 7800, 7350, "n"],
-  [4100, 3900, 4250, 7350, "n"],
-  [4300, 6950, 4450, 9600, "n"],
-  [4300, 10500, 4450, 11000, "n"],
-  [0, 10850, 4300, 11000, "n"],
-  [0, 14550, 4300, 14700, "n"],
-  [4300, 14700, 4450, 16600, "n"],
-  [4300, 17500, 4450, 18100, "n"],
-  [0, 17950, 4300, 18100, "n"],
-  [2500, 18100, 2600, 18500, "n"],
-  [0, 19250, 3000, 19400, "n"],
-  [4200, 19250, 4450, 19400, "n"],
-  [4300, 18100, 4450, 19400, "n"],
-  [11550, 0, 11700, 5100, "n"],
-  [11550, 4950, 15800, 5100, "n"],
-  [8000, 3750, 10300, 3900, "n"],
-  [11200, 3750, 11550, 3900, "n"],
-  [13750, 5100, 13850, 5600, "n"],
-  [13750, 6400, 13850, 6800, "n"],
-  [11550, 6800, 12200, 6950, "n"],
-  [13200, 6800, 15800, 6950, "n"],
-  [8000, 5700, 10400, 5850, "n"],
-  [11200, 5700, 11550, 5850, "n"],
-  [8000, 7150, 10400, 7350, "n"],
-  [11200, 7150, 11550, 7350, "n"],
-  [11550, 3900, 11700, 7350, "n"],
-  [11350, 6950, 11500, 9600, "n"],
-  [11350, 10500, 11500, 11000, "n"],
-  [11500, 10850, 15800, 11000, "n"],
-  [11500, 14550, 15800, 14700, "n"],
-  [11350, 14700, 11500, 16600, "n"],
-  [11350, 17500, 11500, 18100, "n"],
-  [11500, 17950, 15800, 18100, "n"],
-  [13200, 18100, 13300, 18500, "n"],
-  [11350, 19250, 11600, 19400, "n"],
-  [12800, 19250, 15800, 19400, "n"],
-  [11350, 18100, 11500, 19400, "n"]
-];
-
-const WINS = [
-  [1200, -200, 2600, 0],
-  [5200, -200, 6600, 0],
-  [9200, -200, 10600, 0],
-  [13200, -200, 14600, 0],
-  [-200, 1600, 0, 3200],
-  [-200, 8200, 0, 9800],
-  [-200, 12200, 0, 14000],
-  [-200, 15600, 0, 17000],
-  [-200, 20600, 0, 22600],
-  [15800, 1600, 16000, 3200],
-  [15800, 8200, 16000, 9800],
-  [15800, 12200, 16000, 14000],
-  [15800, 15600, 16000, 17000],
-  [15800, 20600, 16000, 22600],
-  [4800, 24200, 6800, 24400],
-  [9000, 24200, 11000, 24400],
-  [5640, 8600, 5840, 9800],
-  [9960, 8600, 10160, 9800]
-];
-
-const DOORS = [
-  {"name": "مدخل الشقة اليسرى (Left Unit Entrance)", "h": [6240, 14650], "c": [1, 0], "o": [0, 1], "len": 950, "entry": true, "rect": [6240, 14650, 7240, 14850]},
-  {"name": "مدخل الشقة اليمنى (Right Unit Entrance)", "h": [9560, 14650], "c": [-1, 0], "o": [0, 1], "len": 950, "entry": true, "rect": [8560, 14650, 9560, 14850]},
-  {"name": "باب غرفة نوم 2 (Left)", "h": [4600, 3750], "c": [1, 0], "o": [0, -1], "len": 850, "rect": [4600, 3750, 5500, 3900]},
-  {"name": "باب حمام الماستر (Left)", "h": [2050, 5600], "c": [0, 1], "o": [-1, 0], "len": 780, "rect": [1950, 5600, 2050, 6400]},
-  {"name": "باب جناح الماستر (Left)", "h": [3600, 6800], "c": [-1, 0], "o": [0, -1], "len": 900, "rect": [2600, 6800, 3600, 6950]},
-  {"name": "باب الغسيل (Left)", "h": [4600, 5700], "c": [1, 0], "o": [0, -1], "len": 750, "rect": [4600, 5700, 5400, 5850]},
-  {"name": "باب الحمام العائلي (Left)", "h": [4600, 7150], "c": [1, 0], "o": [0, -1], "len": 750, "rect": [4600, 7150, 5400, 7350]},
-  {"name": "باب غرفة نوم 1 (Left)", "h": [4450, 10500], "c": [0, -1], "o": [-1, 0], "len": 850, "rect": [4300, 9600, 4450, 10500]},
-  {"name": "باب المطبخ (Left)", "h": [4450, 16600], "c": [0, 1], "o": [-1, 0], "len": 850, "rect": [4300, 16600, 4450, 17500]},
-  {"name": "باب حمام الضيوف (Left)", "h": [2600, 18500], "c": [0, 1], "o": [-1, 0], "len": 750, "rect": [2500, 18500, 2600, 19300]},
-  {"name": "باب صالون الاستقبال (Left)", "h": [3000, 19250], "c": [1, 0], "o": [0, 1], "len": 1050, "rect": [3000, 19250, 4200, 19400]},
-  {"name": "باب غرفة نوم 2 (Right)", "h": [11200, 3750], "c": [-1, 0], "o": [0, -1], "len": 850, "rect": [10300, 3750, 11200, 3900]},
-  {"name": "باب حمام الماستر (Right)", "h": [13750, 5600], "c": [0, 1], "o": [1, 0], "len": 780, "rect": [13750, 5600, 13850, 6400]},
-  {"name": "باب جناح الماستر (Right)", "h": [12200, 6800], "c": [1, 0], "o": [0, -1], "len": 900, "rect": [12200, 6800, 13200, 6950]},
-  {"name": "باب الغسيل (Right)", "h": [11200, 5700], "c": [-1, 0], "o": [0, -1], "len": 750, "rect": [10400, 5700, 11200, 5850]},
-  {"name": "باب الحمام العائلي (Right)", "h": [11200, 7150], "c": [-1, 0], "o": [0, -1], "len": 750, "rect": [10400, 7150, 11200, 7350]},
-  {"name": "باب غرفة نوم 1 (Right)", "h": [11350, 10500], "c": [0, -1], "o": [1, 0], "len": 850, "rect": [11350, 9600, 11500, 10500]},
-  {"name": "باب المطبخ (Right)", "h": [11350, 16600], "c": [0, 1], "o": [1, 0], "len": 850, "rect": [11350, 16600, 11500, 17500]},
-  {"name": "باب حمام الضيوف (Right)", "h": [13200, 18500], "c": [0, 1], "o": [1, 0], "len": 750, "rect": [13200, 18500, 13300, 19300]},
-  {"name": "باب صالون الاستقبال (Right)", "h": [12800, 19250], "c": [-1, 0], "o": [0, 1], "len": 1050, "rect": [11600, 19250, 12800, 19400]}
-];
-
-const SLIDES = [
-  {"rect": [800, 24200, 3400, 24400], "v": false},
-  {"rect": [12400, 24200, 15000, 24400], "v": false}
-];
-
-const R = (x0,y0,x1,y1) => [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
-
-const ROOMS = [
-  {id:"m_bed_l", name:"نوم رئيسية (Master L)", poly:[[0, 0], [4100, 0], [4100, 4950], [0, 4950]], mat:"wood", at:[2000, 2400]},
-  {id:"m_bath_l", name:"حمام ماستر (Bath L)", poly:[[0, 5100], [1950, 5100], [1950, 6800], [0, 6800]], mat:"antislip", at:[1000, 5900]},
-  {id:"m_closet_l", name:"ملابس (Closet L)", poly:[[2050, 5100], [4100, 5100], [4100, 6800], [2050, 6800]], mat:"walnut", at:[3100, 5900]},
-  {id:"bed2_l", name:"نوم 2 (Bed 2 L)", poly:[[4250, 0], [7800, 0], [7800, 3750], [4250, 3750]], mat:"wood", at:[5900, 1900]},
-  {id:"laund_l", name:"غسيل (Laundry L)", poly:[[4250, 3900], [7800, 3900], [7800, 5700], [4250, 5700]], mat:"antislip", at:[5900, 4800]},
-  {id:"cbath_l", name:"حمام عائلي (Bath L)", poly:[[4250, 5850], [7800, 5850], [7800, 7150], [4250, 7150]], mat:"antislip", at:[5900, 6500]},
-  {id:"bed1_l", name:"نوم 1 (Bed 1 L)", poly:[[0, 6950], [4300, 6950], [4300, 10850], [0, 10850]], mat:"wood", at:[2100, 8900]},
-  {id:"living_l", name:"معيشة (Living L)", poly:[[0, 11000], [4300, 11000], [4300, 14550], [0, 14550]], mat:"tile800", at:[2100, 12700]},
-  {id:"kitchen_l", name:"مطبخ (Kitchen L)", poly:[[0, 14700], [4300, 14700], [4300, 17950], [0, 17950]], mat:"tile600", at:[2100, 16300]},
-  {id:"gbath_l", name:"حمام ضيوف (Guest Bath L)", poly:[[0, 18100], [2500, 18100], [2500, 19250], [0, 19250]], mat:"antislip", at:[1200, 18600]},
-  {id:"rec_l", name:"استقبال (Reception L)", poly:[[0, 19400], [7800, 19400], [7800, 24200], [0, 24200]], mat:"marble", at:[3900, 21800]},
-  {id:"terr_l", name:"تراس (Terrace L)", poly:[[150, 24400], [3950, 24400], [3950, 25350], [150, 25350]], mat:"walnut", at:[2100, 24900]},
-  {id:"m_bed_r", name:"نوم رئيسية (Master R)", poly:[[11700, 0], [15800, 0], [15800, 4950], [11700, 4950]], mat:"wood", at:[13800, 2400]},
-  {id:"m_closet_r", name:"ملابس (Closet R)", poly:[[11700, 5100], [13750, 5100], [13750, 6800], [11700, 6800]], mat:"walnut", at:[12700, 5900]},
-  {id:"m_bath_r", name:"حمام ماستر (Bath R)", poly:[[13850, 5100], [15800, 5100], [15800, 6800], [13850, 6800]], mat:"antislip", at:[14800, 5900]},
-  {id:"bed2_r", name:"نوم 2 (Bed 2 R)", poly:[[8000, 0], [11550, 0], [11550, 3750], [8000, 3750]], mat:"wood", at:[9900, 1900]},
-  {id:"laund_r", name:"غسيل (Laundry R)", poly:[[8000, 3900], [11550, 3900], [11550, 5700], [8000, 5700]], mat:"antislip", at:[9900, 4800]},
-  {id:"cbath_r", name:"حمام عائلي (Bath R)", poly:[[8000, 5850], [11550, 5850], [11550, 7150], [8000, 7150]], mat:"antislip", at:[9900, 6500]},
-  {id:"bed1_r", name:"نوم 1 (Bed 1 R)", poly:[[11500, 6950], [15800, 6950], [15800, 10850], [11500, 10850]], mat:"wood", at:[13700, 8900]},
-  {id:"living_r", name:"معيشة (Living R)", poly:[[11500, 11000], [15800, 11000], [15800, 14550], [11500, 14550]], mat:"tile800", at:[13700, 12700]},
-  {id:"kitchen_r", name:"مطبخ (Kitchen R)", poly:[[11500, 14700], [15800, 14700], [15800, 17950], [11500, 17950]], mat:"tile600", at:[13700, 16300]},
-  {id:"gbath_r", name:"حمام ضيوف (Guest Bath R)", poly:[[13300, 18100], [15800, 18100], [15800, 19250], [13300, 19250]], mat:"antislip", at:[14600, 18600]},
-  {id:"rec_r", name:"استقبال (Reception R)", poly:[[8000, 19400], [15800, 19400], [15800, 24200], [8000, 24200]], mat:"marble", at:[11900, 21800]},
-  {id:"terr_r", name:"تراس (Terrace R)", poly:[[11850, 24400], [15650, 24400], [15650, 25350], [11850, 25350]], mat:"walnut", at:[13700, 24900]},
-  {id:"lightwell", name:"منور (Lightwell)", poly:[[5840, 7350], [9960, 7350], [9960, 10850], [5840, 10850]], mat:"antislip", at:[7900, 9100]},
-  {id:"stairs_core", name:"درج ومصعد (Stairs & Elevator)", poly:[[6040, 11000], [9760, 11000], [9760, 14650], [6040, 14650]], mat:"marble", at:[7900, 14000]}
-];
-const MATS = {
-  wood:    {name:'橡木地板', price:320, sw:'#d8b88a'},
-  walnut:  {name:'胡桃木地板', price:380, sw:'#9b7250'},
-  tile800: {name:'800 地砖', price:220, sw:'#ebe6dc'},
-  tile600: {name:'600 地砖', price:160, sw:'#dfe3e1'},
-  marble:  {name:'大理石', price:650, sw:'#f1eee8'},
-  antislip:{name:'300 防滑砖', price:140, sw:'#d3d8d4'},
-  terrazzo:{name:'水磨石', price:280, sw:'#e6dfd3'},
-  carpet:  {name:'满铺地毯', price:200, sw:'#c9c3d3'},
-};
-// 家具库：[类型, 名称, 宽, 深, 颜色]
-const LIB = [
-  {cat:'卧室', items:[
-    ['bed','双人床 1.8m',1800,2000,'#c9d6df'],['bed','双人床 1.5m',1500,2000,'#d8c7dc'],['bed','单人床',1200,2000,'#e8d5b5'],
-    ['crib','婴儿床',1250,700,'#efe3d0'],['nightstand','床头柜',450,400,'#e8dccb'],['wardrobe','衣柜',2000,600,'#efe6d8'],
-    ['wardrobe','小衣柜',1200,550,'#efe6d8'],['dresser','梳妆台',1000,450,'#efe6d8'],['desk','书桌',1200,600,'#e2cfb4'],
-    ['chair','椅子',450,480,'#cfc6b8'],['bookshelf','书架',800,300,'#e2cfb4'],['baycushion','飘窗垫',520,1800,'#e7dccd']]},
-  {cat:'客厅', items:[
-    ['sofa','三人沙发',2400,900,'#b7c4b0'],['sofa','双人沙发',1700,880,'#c3cbd6'],['cornersofa','转角沙发',2800,1700,'#b7c4b0'],
-    ['armchair','单人沙发',850,850,'#d6b99a'],['beanbag','懒人沙发',800,800,'#e0b98f'],['coffeetable','茶几',1300,650,'#e8dccb'],
-    ['sidetable','边几',500,500,'#d9c3a3'],['tvstand','电视柜',2400,400,'#e2cfb4'],['rug','地毯',2400,1700,'#d9cbb8'],
-    ['shoecab','鞋柜',1000,350,'#efe6d8'],['shoecab','玄关柜',1400,380,'#e6dccc'],['floorlamp','落地灯',450,450,'#3d3a34'],
-    ['plant','绿植',500,500,'#a9c39b'],['plant','大绿植',700,700,'#9dbb8c']]},
-  {cat:'餐厨', items:[
-    ['table','餐桌',1400,800,'#e2cfb4'],['table','六人餐桌',1800,900,'#d8c2a2'],['roundtable','圆桌',1000,1000,'#e2cfb4'],
-    ['chair','餐椅',450,480,'#cfc6b8'],['island','岛台',1800,900,'#e9e5de'],['barstool','吧椅',420,420,'#6b5d4c'],
-    ['counter','橱柜台面',1600,600,'#e9e5de'],['stove','燃气灶',750,450,'#dcdcdc'],['ksink','水槽',800,450,'#e1e6ea'],
-    ['fridge','冰箱',700,700,'#dfe4e8'],['cabinet','餐边柜',1600,400,'#efe6d8']]},
-  {cat:'卫浴', items:[
-    ['toilet','马桶',400,700,'#ffffff'],['vanity','浴室柜',800,500,'#eef1f3'],['vanity','双盆浴室柜',1200,500,'#eef1f3'],
-    ['shower','淋浴房',900,900,'#e4edf2'],['bathtub','浴缸',1600,750,'#eef3f6'],['washer','洗衣机',600,600,'#e6ebee'],
-    ['waterheater','电热水器',800,450,'#f4f4f2'],['cabinet','储物柜',1000,400,'#efe6d8']]},
-  {cat:'家电', items:[
-    ['tv','65 寸电视',1450,80,'#1d1d1f'],['tv','55 寸电视',1230,80,'#1d1d1f'],['fridge','对开门冰箱',910,700,'#c9ced3'],
-    ['aircon','柜机空调',500,380,'#f6f7f8'],['acwall','挂机空调',900,250,'#f6f7f8'],['dishwasher','洗碗机',600,600,'#c9ced3'],
-    ['ovencol','蒸烤箱高柜',600,600,'#efe6d8'],['dryer','烘干机',600,600,'#e6ebee'],['purifier','空气净化器',400,300,'#f4f4f2']]},
-  {cat:'书房 · 休闲', items:[
-    ['desk','长书桌',1600,700,'#d8c2a2'],['officechair','办公椅',620,620,'#4a4f55'],['bookshelf','大书架',1600,350,'#e2cfb4'],
-    ['piano','立式钢琴',1500,600,'#1f1d1b'],['treadmill','跑步机',800,1800,'#3a3a3c'],['armchair','阅读椅',750,800,'#c9a98a']]},
-];
-const typeColor = t => { for (const c of LIB) for (const i of c.items) if (i[0]===t) return i[4]; return '#eee'; };
-
-let _n = 1;
-const uid = () => 'f' + Date.now().toString(36) + (_n++);
-const F = (type,name,cx,cy,w,d,rot=0,color) => ({id:uid(),type,name,cx,cy,w,d,rot,color:color||typeColor(type)});
-
-function defaultFurniture(){
-  return [
-  F('bed','سرير ماستر 1.8m',2100,2400,1800,2000,0,'#c9d6df'),
-  F('nightstand','كومودينو',1000,1700,450,400,0),
-  F('nightstand','كومودينو',3200,1700,450,400,0),
-  F('wardrobe','دولاب ملابس',3100,5900,2000,600,0),
-  F('bed','سرير 1.5m',5900,1900,1500,2000,0,'#d8c7dc'),
-  F('nightstand','كومودينو',5000,1200,450,400,0),
-  F('desk','مكتب دراسة',7100,2800,1200,600,270),
-  F('chair','كرسي',6600,2800,450,480,90),
-  F('bed','سرير 1.5m',2100,8900,1500,2000,0,'#e8d5b5'),
-  F('desk','مكتب دراسة',3900,10100,1200,600,180),
-  F('cornersofa','كنبة زاوية عائلية',2000,12600,2800,1700,0,'#b7c4b0'),
-  F('coffeetable','طاولة قهوة',2200,13500,1300,650,0),
-  F('tvstand','وحدة تلفزيون',4000,12700,2400,400,180),
-  F('tv','65 寸电视',4000,12700,1450,80,180),
-  F('counter','رخام مطبخ كاونتر',700,16300,1600,600,0),
-  F('stove','بوتجاز غاز',1900,15100,750,450,0),
-  F('ksink','حوض غسيل',2900,15100,800,450,0),
-  F('fridge','ثلاجة عائلية',3900,15500,910,700,270),
-  F('sofa','طقم استقبال 3 مقاعد',2000,21400,2400,900,90,'#b7c4b0'),
-  F('sofa','طقم استقبال 3 مقاعد',5800,21400,2400,900,270,'#b7c4b0'),
-  F('coffeetable','طاولة رخام',3900,21400,1400,700,0),
-  F('rug','سجادة صالون فاخرة',3900,21400,3000,2000,0),
-  F('bed','سرير ماستر 1.8m',13700,2400,1800,2000,0,'#c9d6df'),
-  F('nightstand','كومودينو',12600,1700,450,400,0),
-  F('nightstand','كومودينو',14800,1700,450,400,0),
-  F('wardrobe','دولاب ملابس',12700,5900,2000,600,0),
-  F('bed','سرير 1.5m',9900,1900,1500,2000,0,'#d8c7dc'),
-  F('desk','مكتب دراسة',8700,2800,1200,600,90),
-  F('bed','سرير 1.5m',13700,8900,1500,2000,0,'#e8d5b5'),
-  F('cornersofa','كنبة زاوية عائلية',13800,12600,2800,1700,270,'#b7c4b0'),
-  F('counter','رخام مطبخ كاونتر',15100,16300,1600,600,180),
-  F('fridge','ثلاجة عائلية',11900,15500,910,700,90),
-  F('sofa','طقم استقبال 3 مقاعد',10000,21400,2400,900,90,'#b7c4b0'),
-  F('sofa','طقم استقبال 3 مقاعد',13800,21400,2400,900,270,'#b7c4b0'),
-  F('coffeetable','طاولة رخام',11900,21400,1400,700,0)
-  ];
-}
-
-function defaultState(){
-  const rooms = {}; ROOMS.forEach(r => rooms[r.id] = {name:r.name, mat:r.mat});
-  return {furniture:defaultFurniture(), rooms, demolished:[], measures:[]};
-}
-
-const STORE = 'twin-apartment-house-3d-v4';
-function load(){
-  try { const s = JSON.parse(localStorage.getItem(STORE)); if (s && Array.isArray(s.furniture)) return fixState(s); } catch(e) {}
-  return null;
-}
-function fixState(s){
-  const d = defaultState();
-  s.rooms = Object.assign(d.rooms, s.rooms || {});
-  s.demolished = s.demolished || []; s.measures = s.measures || [];
-  return s;
-}
-
-const PX_MM = 25.4 / 96;                       // 1 CSS px = 0.2646 mm
-const COARSE = matchMedia('(pointer:coarse)').matches;   // iPad / 手机等触屏为主的设备
-const TAP = COARSE ? 9 : 4;                    // 手指按下后移动超过该像素才算拖动
-const narrow = () => matchMedia('(max-width:1100px)').matches;
-const BOUNDS = {x:-2000, y:-2000, w:19800, h:30200};
-const $ = s => document.querySelector(s);
-const svg = $('#plan');
-
-
-/* ======================= 状态 / 历史 / 存储 ======================= */
-let state = load() || defaultState();
-const ui = {tool:'select', sel:null, mA:null, mCur:null,
-  layers:{dims:true, labels:true, furn:true, grid:false, bearing:false, wallSnap:true}};
-let view = {x0:0, y0:0, s:.06};
-const undoStack = [], redoStack = [];
-
-function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch(e) {} }
-const snap = () => JSON.stringify(state);
-function commit(before){ undoStack.push(before); if (undoStack.length > 150) undoStack.shift(); redoStack.length = 0; save(); }
-function mutate(fn){ const b = snap(); fn(); commit(b); renderAll(); }
-function undo(){ if (!undoStack.length) return toast(tr('没有可撤销的操作', 'Nothing to undo')); redoStack.push(snap()); state = JSON.parse(undoStack.pop()); validateSel(); save(); renderAll(); }
-function redo(){ if (!redoStack.length) return; undoStack.push(snap()); state = JSON.parse(redoStack.pop()); validateSel(); save(); renderAll(); }
-function validateSel(){ if (ui.sel?.kind==='furn' && !getF(ui.sel.id)) ui.sel = null; }
-const getF = id => state.furniture.find(f => f.id === id);
-
-/* ======================= 几何工具 ======================= */
-const area = poly => Math.abs(poly.reduce((a,p,i) => { const q = poly[(i+1)%poly.length]; return a + p[0]*q[1] - q[0]*p[1]; }, 0)) / 2 / 1e6;
-const perim = poly => poly.reduce((a,p,i) => { const q = poly[(i+1)%poly.length]; return a + Math.hypot(q[0]-p[0], q[1]-p[1]); }, 0) / 1000;
-const bbox = poly => { const xs = poly.map(p=>p[0]), ys = poly.map(p=>p[1]); return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]; };
-function aabb(f){ const a = f.rot*Math.PI/180, c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a)); return {hw:f.w/2*c + f.d/2*s, hh:f.w/2*s + f.d/2*c}; }
-const fmt = (n, d=2) => n.toFixed(d);
-const norm = a => ((Math.round(a) % 360) + 360) % 360;
-function snapRects(){ return WALLS.filter((w,i) => !state.demolished.includes('w'+i)).concat(WINS); }
-
-/* ======================= 颜色 / 材质图案 ======================= */
-function hex2rgb(h){ h = h.replace('#',''); if (h.length===3) h = h.split('').map(c=>c+c).join(''); const n = parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
-function shade(h,k){ const f = v => Math.max(0,Math.min(255,Math.round(k>1 ? v+(255-v)*(k-1)*2 : v*k))); return '#'+hex2rgb(h).map(v=>f(v).toString(16).padStart(2,'0')).join(''); }
-
-function buildDefs(){
-  const plank = (id,base,line) => `<pattern id="m-${id}" patternUnits="userSpaceOnUse" width="1800" height="360">
-      <rect width="1800" height="360" fill="${base}"/>
-      <path d="M0 0H1800M0 180H1800M1200 0V180M600 180V360" stroke="${line}" stroke-width="10"/>
-      <path d="M100 70Q500 60 900 85T1700 75M200 260Q700 250 1100 275T1750 262" stroke="${line}" stroke-width="5" fill="none" opacity=".45"/></pattern>`;
-  const tile = (id,size,base,line) => `<pattern id="m-${id}" patternUnits="userSpaceOnUse" width="${size}" height="${size}">
-      <rect width="${size}" height="${size}" fill="${base}"/><path d="M0 0H${size}M0 0V${size}" stroke="${line}" stroke-width="10"/></pattern>`;
-  $('#defs').innerHTML =
-    plank('wood','#dcc09a','#bf9d70') + plank('walnut','#a57c56','#80593a') +
-    tile('tile800',800,'#ece7de','#d3cabb') + tile('tile600',600,'#e2e6e3','#c4cbc6') + tile('antislip',300,'#d6dbd7','#b3bab4') +
-    `<pattern id="m-marble" patternUnits="userSpaceOnUse" width="1200" height="1200">
-      <rect width="1200" height="1200" fill="#f3f0ea"/><path d="M0 0H1200M0 0V1200" stroke="#dcd5c8" stroke-width="10"/>
-      <path d="M-50 300C250 260 380 520 700 470S1100 640 1260 600M200 1200C300 950 520 980 640 820" stroke="#d6cfc2" stroke-width="12" fill="none"/></pattern>
-    <pattern id="m-terrazzo" patternUnits="userSpaceOnUse" width="500" height="500">
-      <rect width="500" height="500" fill="#e8e1d5"/>
-      <circle cx="60" cy="80" r="22" fill="#b9a58c"/><circle cx="310" cy="140" r="16" fill="#8fa3a0"/><circle cx="190" cy="330" r="26" fill="#c9b7a2"/>
-      <circle cx="420" cy="400" r="18" fill="#a88f76"/><circle cx="90" cy="440" r="12" fill="#8fa3a0"/><circle cx="440" cy="40" r="10" fill="#b9a58c"/></pattern>
-    <pattern id="m-carpet" patternUnits="userSpaceOnUse" width="120" height="120">
-      <rect width="120" height="120" fill="#c9c3d3"/><circle cx="30" cy="30" r="8" fill="#bab3c6"/><circle cx="90" cy="90" r="8" fill="#bab3c6"/></pattern>
-    <pattern id="grid" patternUnits="userSpaceOnUse" width="1000" height="1000">
-      <path d="M500 0V1000M0 500H1000" stroke="#e5dfd3" stroke-width="8"/><path d="M0 0V1000M0 0H1000" stroke="#d8d0c1" stroke-width="14"/></pattern>`;
-}
-
-/* ======================= 家具图例 ======================= */
-const ST = 'stroke="#3d3a34" stroke-width="1" vector-effect="non-scaling-stroke"';
-const rc = (x,y,w,h,f,ex='') => `<rect x="${x}" y="${y}" width="${Math.max(0,w)}" height="${Math.max(0,h)}" fill="${f}" ${ST} ${ex}/>`;
-const ec = (cx,cy,rx,ry,f,ex='') => `<ellipse cx="${cx}" cy="${cy}" rx="${Math.max(0,rx)}" ry="${Math.max(0,ry)}" fill="${f}" ${ST} ${ex}/>`;
-const ln = (x1,y1,x2,y2,ex='') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${ST} ${ex}/>`;
-const pa = (d,f='none',ex='') => `<path d="${d}" fill="${f}" ${ST} ${ex}/>`;
-const DASH = 'stroke-dasharray="4 3"';
-
-function furnSVG(t,w,d,c){
-  const x = -w/2, y = -d/2, m = Math.min(w,d);
-  switch (t){
-    case 'bed': {
-      let s = rc(x,y,w,d,'#fbf8f2','rx="30"') + rc(x,y,w,Math.min(90,d*.05),shade(c,.62),'rx="20"');
-      const ph = Math.min(360,d*.18), py = y+150;
-      if (w >= 1300){ const pw = (w-240)/2; s += rc(x+80,py,pw,ph,'#fff','rx="70"') + rc(x+160+pw,py,pw,ph,'#fff','rx="70"'); }
-      else s += rc(x+80,py,w-160,ph,'#fff','rx="70"');
-      const by = py+ph+110, bh = y+d-15-by;
-      s += rc(x+15,by,w-30,bh,c,'rx="40"') + pa(`M${x+15} ${by+300}H${x+w-15}`,'none',DASH);
-      s += pa(`M${x+w-15-Math.min(420,w*.3)} ${by}L${x+w-15} ${by}L${x+w-15} ${by+Math.min(420,w*.3)}Z`, shade(c,1.12));
-      return s;
-    }
-    case 'sofa': case 'armchair': {
-      const b = d*.24, a = Math.min(200,w*.13), n = t==='armchair' ? 1 : (w>2200 ? 3 : 2), cw = (w-2*a)/n, dk = shade(c,.85);
-      let s = rc(x,y,w,d,dk,'rx="60"');
-      for (let i=0;i<n;i++) s += rc(x+a+i*cw,y+b,cw,d-b-40,c,'rx="40"');
-      return s + rc(x,y,w,b,dk,'rx="50"') + rc(x,y,a,d,dk,'rx="50"') + rc(x+w-a,y,a,d,dk,'rx="50"');
-    }
-    case 'cornersofa': {
-      const k = Math.min(950,d*.56,w*.4), b = 220, dk = shade(c,.85);
-      let s = pa(`M${x} ${y}H${x+w}V${y+k}H${x+k}V${y+d}H${x}Z`, dk);
-      const cw = (w-b-200)/2;
-      s += rc(x+b,y+b,cw,k-b-30,c,'rx="40"') + rc(x+b+cw,y+b,cw,k-b-30,c,'rx="40"') + rc(x+b,y+k,k-b-30,d-k-200,c,'rx="40"');
-      return s + rc(x,y,w,b,dk,'rx="50"') + rc(x,y,b,d,dk,'rx="50"') + rc(x+w-200,y,200,k,dk,'rx="50"') + rc(x,y+d-200,k,200,dk,'rx="50"');
-    }
-    case 'nightstand': return rc(x,y,w,d,c,'rx="30"') + `<circle r="${m*.24}" fill="#fff6dd" ${ST}/>` + `<circle r="${m*.08}" fill="${shade(c,.8)}" ${ST}/>`;
-    case 'wardrobe': {
-      let s = rc(x,y,w,d,c) + ln(x+50,0,x+w-50,0);
-      for (let hx = x+160; hx < x+w-100; hx += 180) s += ln(hx-45,-d*.28,hx+45,d*.28,'opacity=".6"');
-      return s;
-    }
-    case 'cabinet': case 'shoecab': return rc(x,y,w,d,c) + ln(x,y+d,x+w,y);
-    case 'dresser': return rc(x,y,w,d,c,'rx="20"') + rc(x+w*.2,y,w*.6,55,'#dfe9ee') + ec(0,d/2+180,160,140,shade(c,.9));
-    case 'desk': return rc(x,y,w,d,c,'rx="20"') + rc(-w*.18,y+50,w*.36,45,'#555') + rc(-w*.14,y+d*.45,w*.28,d*.28,'#f4f4f4','rx="10"');
-    case 'chair': return rc(x+25,y+d*.16,w-50,d*.84-10,c,'rx="60"') + rc(x,y,w,d*.2,shade(c,.78),'rx="40"');
-    case 'bookshelf': { let s = rc(x,y,w,d,c); for (let bx = x+400; bx < x+w-50; bx += 400) s += ln(bx,y,bx,y+d); return s; }
-    case 'baycushion': return rc(x,y,w,d,c,'rx="60"') + rc(x+60,y+80,w-120,Math.min(300,d*.2),'#fff','rx="60"') + rc(x+60,y+d-80-Math.min(300,d*.2),w-120,Math.min(300,d*.2),'#fff','rx="60"');
-    case 'coffeetable': return rc(x,y,w,d,c,'rx="80"') + rc(x+60,y+60,w-120,d-120,shade(c,1.06),'rx="50"');
-    case 'tvstand': return rc(x,y,w,d,c) + rc(x+w*.15,y+30,w*.7,55,'#3a3a3a');
-    case 'rug': return rc(x,y,w,d,c,'rx="40" fill-opacity=".6"') + rc(x+90,y+90,w-180,d-180,'none','rx="30" stroke-dasharray="3 3" opacity=".6"');
-    case 'plant': {
-      let s = `<circle r="${m/2}" fill="${c}" fill-opacity=".85" ${ST}/>`;
-      for (let k=0;k<8;k++) s += `<ellipse cx="0" cy="${-m*.27}" rx="${m*.1}" ry="${m*.21}" transform="rotate(${k*45})" fill="${shade(c,.8)}" ${ST}/>`;
-      return s + `<circle r="${m*.1}" fill="#8a6a4a" ${ST}/>`;
-    }
-    case 'table': return rc(x,y,w,d,c,'rx="30"') + rc(x+50,y+50,w-100,d-100,'none','rx="20" opacity=".4"');
-    case 'roundtable': return ec(0,0,w/2,d/2,c) + ec(0,0,w/2-50,d/2-50,'none','opacity=".4"');
-    case 'counter': return rc(x,y,w,d,c) + ln(x,y+d-40,x+w,y+d-40,DASH);
-    case 'stove': {
-      let s = rc(x,y,w,d,'#2f2f2f','rx="20"'); const r = m*.26;
-      const pts = w/d > 1.4 ? [[-w/4,0],[w/4,0]] : [[-w/4,-d/4],[w/4,-d/4],[-w/4,d/4],[w/4,d/4]];
-      pts.forEach(([px,py]) => s += `<circle cx="${px}" cy="${py}" r="${r}" fill="none" stroke="#bbb" stroke-width="1" vector-effect="non-scaling-stroke"/><circle cx="${px}" cy="${py}" r="${r*.45}" fill="#666"/>`);
-      return s;
-    }
-    case 'ksink': return rc(x,y,w,d,c,'rx="20"') + rc(x+w*.06,y+d*.18,w*.42,d*.66,'#fff','rx="50"') + rc(x+w*.52,y+d*.18,w*.42,d*.66,'#fff','rx="50"') + `<circle cx="0" cy="${y+d*.09}" r="22" fill="#999"/>`;
-    case 'fridge': return rc(x,y,w,d,c,'rx="30"') + ln(x,y+d*.14,x+w,y+d*.14) + ln(0,y+d*.14,0,y+d) + rc(-70,y+d*.5,40,d*.25,'#aab') + rc(30,y+d*.5,40,d*.25,'#aab');
-    case 'toilet': return rc(x+w*.04,y,w*.92,d*.27,c,'rx="30"') + ec(0,y+d*.27+d*.36,w*.47,d*.36,c) + ec(0,y+d*.27+d*.4,w*.3,d*.24,'#eef4f7');
-    case 'vanity': return rc(x,y,w,d,c,'rx="20"') + ec(0,y+d*.57,Math.min(w*.32,260),d*.28,'#fff') + `<circle cx="0" cy="${y+d*.17}" r="26" fill="#999"/>`;
-    case 'shower': return rc(x,y,w,d,c) + ln(x,y,x+w,y+d,DASH) + ln(x+w,y,x,y+d,DASH) + `<circle r="45" fill="#fff" ${ST}/>`;
-    case 'bathtub': return rc(x,y,w,d,c,'rx="40"') + rc(x+80,y+80,w-160,d-160,'#fff',`rx="${m*.33}"`) + `<circle cx="${x+w-260}" cy="0" r="35" fill="#ccc" ${ST}/>`;
-    case 'washer': case 'dryer': return rc(x,y,w,d,c,'rx="30"') + rc(x,y,w,d*.14,shade(c,.9)) + `<circle cy="${d*.06}" r="${m*.34}" fill="#fff" ${ST}/><circle cy="${d*.06}" r="${m*.24}" fill="${t==='dryer'?'#e9dccb':'#cfdde4'}" ${ST}/>`;
-    case 'crib': {
-      let s = rc(x,y,w,d,c,'rx="20"') + rc(x+45,y+45,w-90,d-90,'#fff','rx="20"');
-      for (let sx = x+90; sx < x+w-60; sx += 90) s += ln(sx,y,sx,y+45,'opacity=".5"') + ln(sx,y+d-45,sx,y+d,'opacity=".5"');
-      return s;
-    }
-    case 'beanbag': return ec(0,0,w/2,d/2,c) + ec(-w*.04,-d*.06,w*.3,d*.28,shade(c,1.12),'opacity=".9"');
-    case 'sidetable': return ec(0,0,w/2,d/2,c) + ec(0,0,w*.12,d*.12,'none','opacity=".5"');
-    case 'floorlamp': return `<circle r="${m*.5}" fill="#fff6dd" fill-opacity=".85" ${ST}/>` + `<circle r="${m*.32}" fill="none" ${ST} ${DASH}/>` + `<circle r="${m*.07}" fill="${c}" ${ST}/>`;
-    case 'island': return rc(x,y,w,d,c) + ln(x,y+d-250,x+w,y+d-250,DASH);
-    case 'barstool': return `<circle r="${m/2}" fill="${c}" ${ST}/><circle r="${m*.3}" fill="${shade(c,1.15)}" ${ST}/>`;
-    case 'waterheater': return rc(x,y,w,d,c,`rx="${d/2}" ${DASH}`) + ln(x+w*.2,0,x+w*.8,0,DASH);
-    case 'tv': return rc(x,y,w,d,c,'rx="10"') + rc(x+w*.3,y+d,w*.4,Math.min(40,d),'#666');
-    case 'aircon': return rc(x,y,w,d,c,'rx="30"') + ln(x+40,y+d*.72,x+w-40,y+d*.72) + ln(x+40,y+d*.86,x+w-40,y+d*.86);
-    case 'acwall': {
-      let s = rc(x,y,w,d,c,`rx="30" ${DASH}`);
-      [.25,.5,.75].forEach(k => s += ln(x+w*k,y+d,x+w*k,y+d+200,`${DASH} opacity=".6"`));
-      return s;
-    }
-    case 'dishwasher': return rc(x,y,w,d,c,'rx="15"') + ln(x,y+d-70,x+w,y+d-70) + rc(x+w*.3,y+d-45,w*.4,25,'#888');
-    case 'ovencol': return rc(x,y,w,d,c) + ln(x,y,x+w,y+d) + ln(x+w,y,x,y+d);
-    case 'purifier': return rc(x,y,w,d,c,'rx="60"') + rc(x+45,y+45,w-90,d-90,'none',`rx="40" ${DASH}`);
-    case 'officechair': {
-      let s = '';
-      for (let k = 0; k < 5; k++) s += `<line x1="0" y1="0" x2="0" y2="${m*.48}" transform="rotate(${k*72+36})" stroke="#555" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
-      return s + rc(x+w*.12,y+d*.22,w*.76,d*.66,c,'rx="80"') + rc(x+w*.15,y+d*.04,w*.7,d*.16,shade(c,.78),'rx="40"')
-        + rc(x+w*.02,y+d*.3,w*.1,d*.45,shade(c,.7),'rx="30"') + rc(x+w*.88,y+d*.3,w*.1,d*.45,shade(c,.7),'rx="30"');
-    }
-    case 'piano': {
-      let s = rc(x,y,w,d*.55,c,'rx="10"') + rc(x+40,y+d*.55,w-80,d*.4,shade(c,1.4),'rx="10"');
-      const kx = x+90, kw = w-180, kd = d*.2;
-      s += rc(kx,y+d*.55,kw,kd,'#faf8f3');
-      for (let i = 1; i < 26; i++) s += ln(kx+kw*i/26,y+d*.55,kx+kw*i/26,y+d*.55+kd,'opacity=".5"');
-      return s;
-    }
-    case 'treadmill': return rc(x,y,w,d,c,'rx="50"') + rc(x+90,y+320,w-180,d-400,'#1c1c1e','rx="25"') + rc(x,y,w,230,shade(c,1.4),'rx="40"');
-    default: return rc(x,y,w,d,c);
-  }
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  document.title = tr('عمارة سكنية فاخرة · شقتين متطابقتين (3D)', 'Twin Luxury Apartments 3D Floor Plan');
+  document.querySelectorAll('[data-en]').forEach(el => {
+    el.dataset.ar ??= el.textContent;
+    el.textContent = tr(el.dataset.ar, el.dataset.en);
+  });
+  document.querySelectorAll('[data-en-title]').forEach(el => {
+    el.dataset.arTitle ??= el.title;
+    el.title = tr(el.dataset.arTitle, el.dataset.enTitle);
+  });
+  document.querySelectorAll('#langSel [data-lang]').forEach(b => {
+    const on = b.dataset.lang === LANG;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on);
+  });
 }
 
 /* ======================= 渲染 ======================= */
@@ -1015,7 +580,7 @@ function renderAll(){
 
 function updateHeader(){
   const tot = ROOMS.filter(r => r.counted !== false).reduce((a,r) => a + area(r.poly), 0);
-  $('#subtitle').textContent = tr(`套内使用面积约 ${fmt(tot)} m² · 尺寸单位 mm · 原图比例 1:60`, `Net floor area ≈ ${fmt(tot)} m² · Units: mm · Original scale 1:60`);
+  $('#subtitle').textContent = tr(`إجمالي المساحة الصافية حوالي ${fmt(tot)} م² · الأبعاد بالمليمتر · مقياس 1:60`, `Net floor area ≈ ${fmt(tot)} m² · Units: mm · Original scale 1:60`);
   $('#undo').disabled = !undoStack.length; $('#redo').disabled = !redoStack.length;
   $('#undo').style.opacity = undoStack.length ? 1 : .4; $('#redo').style.opacity = redoStack.length ? 1 : .4;
 }
@@ -1058,29 +623,29 @@ function overviewPanel(){
       <div><small>${tr('拆除墙体','Walls removed')}</small><span class="big">${fmt(demLen,1)}</span> m</div></div>
     <div class="actions"><button class="btn" id="clearMeasure">${tr('清除测量','Clear measures')} (${state.measures.length})</button>
       <button class="btn danger" id="clearFurn">${tr('清空布置','Clear layout')}</button></div></section>
-  ${COARSE ? tr(`<section><h3>触屏操作</h3><div class="kbd">
-    <kbd>单指拖动</kbd><span>空白处平移画面</span><kbd>双指</kbd><span>捏合缩放、拖动平移</span>
-    <kbd>家具库</kbd><span>点一下放到画面中央，或按住向右拖到指定位置</span>
-    <kbd>点家具</kbd><span>选中后拖动移动；拖顶部圆点旋转、右下方块改尺寸</span>
-    <kbd>工具条</kbd><span>选中后底部可旋转 / 复制 / 删除</span>
-    <kbd>测量</kbd><span>按住拖出一条线，或依次点两点</span>
-    <kbd>3D 漫游</kbd><span>左下摇杆移动，拖动屏幕转向，点门开关</span>
+  ${COARSE ? tr(`<section><h3>إيماءات اللمس</h3><div class="kbd">
+    <kbd>سحب بإصبع</kbd><span>تحريك المخطط في المساحات الفارغة</span><kbd>إصبعان</kbd><span>تكبير وتصغير وتحريك المخطط</span>
+    <kbd>مكتبة الأثاث</kbd><span>اضغط للإضافة في المركز، أو اسحب لموضع معين</span>
+    <kbd>تحديد الأثاث</kbd><span>اسحب للتحريك؛ اسحب النقطة للتدوير، والزاوية للحجم</span>
+    <kbd>شريط الأدوات</kbd><span>خيارات التدوير / التكرار / الحذف بالأسفل</span>
+    <kbd>القياس</kbd><span>اسحب لرسم خط القياس، أو انقر نقطتين</span>
+    <kbd>جولة 3D</kbd><span>عصا التحكم باليسار للحركة، اسحب للنظر، انقر الأبواب للفتح</span>
   </div></section>`, `<section><h3>Touch Controls</h3><div class="kbd">
-    <kbd>1-finger drag</kbd><span>Pan on empty space</span><kbd>2 fingers</kbd><span>Pinch to zoom, drag to pan</span>
-    <kbd>Library</kbd><span>Tap to place at center, or hold and drag right to a spot</span>
-    <kbd>Tap item</kbd><span>Drag to move; top dot rotates, bottom-right square resizes</span>
-    <kbd>Toolbar</kbd><span>Bottom bar can rotate / duplicate / delete</span>
-    <kbd>Measure</kbd><span>Hold and drag a line, or tap two points</span>
-    <kbd>3D walk</kbd><span>Joystick moves, drag to look, tap doors to open</span>
+    <kbd>1-finger drag</kbd><span>Pan the canvas</span><kbd>2-finger</kbd><span>Pinch to zoom / pan</span>
+    <kbd>Library</kbd><span>Tap to place in center, or drag to target</span>
+    <kbd>Tap item</kbd><span>Drag to move; drag top dot to rotate, corner to resize</span>
+    <kbd>Toolbar</kbd><span>Rotate / duplicate / delete at bottom</span>
+    <kbd>Measure</kbd><span>Drag a line or tap two points</span>
+    <kbd>3D walk</kbd><span>Joystick moves, drag screen looks, tap doors</span>
   </div></section>`) : ''}
-  ${tr(`<section><h3>键盘快捷键</h3><div class="kbd">
-    <kbd>拖拽</kbd><span>左侧家具拖入平面图</span><kbd>V</kbd><span>选择 / 移动</span><kbd>M</kbd><span>测量（Shift 水平/垂直）</span>
-    <kbd>X</kbd><span>拆改非承重墙（黑色为承重墙）</span><kbd>R</kbd><span>旋转 90°（Shift 反向）</span><kbd>方向键</kbd><span>微调 10mm（Shift 100mm）</span>
-    <kbd>⌘/Ctrl D</kbd><span>复制</span><kbd>Delete</kbd><span>删除</span><kbd>⌘/Ctrl Z</kbd><span>撤销</span><kbd>T</kbd><span>切换 2D / 3D</span><kbd>F</kbd><span>适应窗口</span><kbd>Esc</kbd><span>取消选择</span>
+  ${tr(`<section><h3>اختصارات لوحة المفاتيح</h3><div class="kbd">
+    <kbd>سحب الأثاث</kbd><span>اسحب من المكتبة إلى المخطط</span><kbd>V</kbd><span>تحديد / تحريك</span><kbd>M</kbd><span>قياس الأبعاد (Shift للأفقي/العمودي)</span>
+    <kbd>X</kbd><span>تعديل الجدران (الأسود جدار حامل)</span><kbd>R</kbd><span>تدوير 90° (Shift للعكس)</span><kbd>الأسهم</kbd><span>تحريك دقيق 10mm (مع Shift 100mm)</span>
+    <kbd>Ctrl+D</kbd><span>تكرار العنصر</span><kbd>Delete</kbd><span>حذف</span><kbd>Ctrl+Z</kbd><span>تراجع</span><kbd>T</kbd><span>تبديل 2D / 3D</span><kbd>F</kbd><span>ملاءمة الشاشة</span><kbd>Esc</kbd><span>إلغاء التحديد</span>
   </div></section>`, `<section><h3>Keyboard Shortcuts</h3><div class="kbd">
     <kbd>Drag</kbd><span>Drag furniture onto the plan</span><kbd>V</kbd><span>Select / move</span><kbd>M</kbd><span>Measure (Shift: horizontal/vertical)</span>
-    <kbd>X</kbd><span>Demolish non-bearing walls (black = bearing)</span><kbd>R</kbd><span>Rotate 90° (Shift reverses)</span><kbd>Arrows</kbd><span>Nudge 10mm (Shift 100mm)</span>
-    <kbd>⌘/Ctrl D</kbd><span>Duplicate</span><kbd>Delete</kbd><span>Delete</span><kbd>⌘/Ctrl Z</kbd><span>Undo</span><kbd>T</kbd><span>Toggle 2D / 3D</span><kbd>F</kbd><span>Fit to window</span><kbd>Esc</kbd><span>Deselect</span>
+    <kbd>X</kbd><span>Demolish non-bearing walls</span><kbd>R</kbd><span>Rotate 90° (Shift: reverse)</span><kbd>Arrow keys</kbd><span>Nudge 10mm (Shift: 100mm)</span>
+    <kbd>Ctrl+D</kbd><span>Duplicate</span><kbd>Delete</kbd><span>Delete</span><kbd>Ctrl+Z</kbd><span>Undo</span><kbd>T</kbd><span>Toggle 2D / 3D</span><kbd>F</kbd><span>Fit to window</span><kbd>Esc</kbd><span>Deselect</span>
   </div></section>`)}`;
 }
 function bindOverview(){
@@ -1108,7 +673,7 @@ function renderFab(){
 function clearLayout(){
   const n = state.furniture.length;
   if (!n) return toast(tr('当前没有布置任何家具', 'There is no furniture to clear'));
-  if (!confirm(tr(`确定清空全部 ${n} 件家具 / 家电吗？\n墙体、地面材料和测量线会保留，可点「撤销」恢复。`, `Remove all ${n} furniture / appliance items?\nWalls, flooring and measurements are kept. You can Undo this.`))) return;
+  if (!confirm(tr(`هل أنت متأكد من تفريغ كافة قطع الأثاث (${n} قطعة)؟\nالجدران، خامات الأرضيات، وخطوط القياس ستبقى، ويمكن التراجع.`, `Remove all ${n} furniture / appliance items?\nWalls, flooring and measurements are kept. You can Undo this.`))) return;
   ui.sel = null; mutate(() => state.furniture = []);
   toast(tr('已清空布置，可点「撤销」恢复', 'Layout cleared — Undo to restore'));
 }
@@ -1152,7 +717,7 @@ function roomPanel(r){
       <div><small>${tr('周长','Perimeter')}</small><span class="big">${fmt(perim(r.poly),1)}</span> m</div>
       <div><small>${tr('开间','Width')}</small><span class="big">${x1-x0}</span> mm</div>
       <div><small>${tr('进深','Depth')}</small><span class="big">${y1-y0}</span> mm</div></div>
-    <div class="muted">${tr(`墙面面积（层高 2.8m，未扣门窗）约 ${fmt(perim(r.poly)*2.8,1)} m²`, `Wall area (2.8m ceiling, openings not deducted) ≈ ${fmt(perim(r.poly)*2.8,1)} m²`)}</div></section>
+    <div class="muted">${tr(`مساحة الجدران (ارتفاع 2.8m، دون خصم الفتحات) حوالي ${fmt(perim(r.poly)*2.8,1)} م²`, `Wall area (2.8m ceiling, openings not deducted) ≈ ${fmt(perim(r.poly)*2.8,1)} m²`)}</div></section>
   <section><h3>${tr('地面材料','Flooring')}</h3><div class="mats">${mats}</div>
     <div class="total"><span>${tr('材料估价','Estimated cost')}</span><b>¥${Math.round(a*MATS[st.mat].price*1.05).toLocaleString()}</b></div></section>
   <section><h3>${tr('房间内家具','Furniture in room')} <small>${tr(`${inside.length} 件`, `${inside.length} items`)}</small></h3>
@@ -1176,15 +741,15 @@ function furnPanel(f){
       <label>${tr('中心','Center')} X (mm)<input type="number" id="fX" value="${Math.round(f.cx)}" step="10"></label>
       <label>${tr('中心','Center')} Y (mm)<input type="number" id="fY" value="${Math.round(f.cy)}" step="10"></label>
       <label>${tr('旋转','Rotation')} (°)<input type="number" id="fR" value="${f.rot}" step="15"></label>
-      <label>${tr('颜色','Color')}<input type="color" id="fC" value="${f.color}"></label>
+      <label>${tr('اللون','Color')}<input type="color" id="fC" value="${f.color}"></label>
     </div>
-    <div class="muted" style="margin-top:8px">${tr('占地面积','Footprint')} ${fmt(f.w*f.d/1e6)} m²</div>
+    <div class="muted" style="margin-top:8px">${tr('المساحة المشغولة','Footprint')} ${fmt(f.w*f.d/1e6)} m²</div>
     <div class="actions">
       <button class="btn" id="aRot">${tr('旋转 90°','Rotate 90°')}</button><button class="btn" id="aDup">${tr('复制','Duplicate')}</button>
       <button class="btn" id="aTop">${tr('置于顶层','Bring to front')}</button><button class="btn" id="aBot">${tr('置于底层','Send to back')}</button>
       <button class="btn danger" id="aDel">${tr('删除','Delete')}</button><button class="btn" id="back">${tr('← 返回','← Back')}</button>
     </div></section>
-  <section class="muted" style="font-size:12px">${tr('拖动家具移动；拖动上方圆点旋转；拖动右下角方块调整尺寸。开启「贴墙吸附」后靠近墙面会自动贴齐。', 'Drag to move; drag the top dot to rotate; drag the bottom-right square to resize. With "Wall snap" on, items snap flush to nearby walls.')}</section>`;
+  <section class="muted" style="font-size:12px">${tr('اسحب القطعة للتحريك، اسحب النقطة العلوية للتدوير، واسحب الزاوية لتعديل المقاس. تفعيل «محاذاة للجدار» يجعل الأثاث يلتصق بالجدار تلقائياً.', 'Drag to move; drag the top dot to rotate; drag the bottom-right square to resize. With "Wall snap" on, items snap flush to nearby walls.')}</section>`;
 }
 function bindFurnPanel(f){
   const upd = (fn) => mutate(() => { const g = getF(f.id); if (g) fn(g); });
@@ -1250,9 +815,9 @@ function setTool(t){
 }
 function syncModeHint(){
   const hints = {select:'',
-    measure:COARSE ? tr('按住拖出测量线，或依次点两点 · 靠近墙面自动吸附 · 点「选择」退出', 'Hold and drag a line, or tap two points · snaps to walls · tap "Select" to exit')
-      : tr('点击两点（或按住拖动）测量距离 · 靠近墙面自动吸附 · Shift 锁定水平/垂直 · Esc 取消', 'Click two points (or drag) to measure · snaps to walls · Shift locks horizontal/vertical · Esc cancels'),
-    demolish:tr('点击灰色非承重墙标记拆除，再次点击恢复 · 黑色承重墙不可拆', 'Click a grey non-bearing wall to remove it, click again to restore · black bearing walls cannot be removed')};
+    measure:COARSE ? tr('اسحب لرسم خط القياس، أو انقر نقطتين · محاذاة تلقائية للجدران · اضغط «تحديد» للخروج', 'Hold and drag a line, or tap two points · snaps to walls · tap "Select" to exit')
+      : tr('انقر نقطتين (أو اسحب) لقياس المسافة · محاذاة تلقائية للجدران · Shift لقفل الاتجاه أفقي/عمودي · Esc للإلغاء', 'Click two points (or drag) to measure · snaps to walls · Shift locks horizontal/vertical · Esc cancels'),
+    demolish:tr('انقر على الجدار غير الحامل لتحديده للإزالة، وانقر ثانية للاستعادة · الجدران الحاملة الإنشائية لا يمكن إزالتها', 'Click a grey non-bearing wall to remove it, click again to restore · black bearing walls cannot be removed')};
   const h = $('#modehint'); h.textContent = hints[ui.tool]; h.classList.toggle('show', !!hints[ui.tool]);
 }
 
@@ -1469,10 +1034,10 @@ document.addEventListener('keydown', e => {
 function buildLib(){
   $('#lib').innerHTML = LIB.map((c,ci) => `<h4>${nm(c.cat)}</h4><div class="lib-grid">${c.items.map((it,ii) => {
     const [t,n,w,d,col] = it, pad = Math.max(w,d)*.08;
-    return `<div class="item" data-key="${ci}:${ii}" title="${tr('点击添加，或拖到平面图中的指定位置', 'Click to add, or drag onto the plan')}">
+    return `<div class="item" data-key="${ci}:${ii}" title="${tr('اضغط للإضافة، أو اسحب للموضع المطلوب في المخطط', 'Click to add, or drag onto the plan')}">
       <svg viewBox="${-w/2-pad} ${-d/2-pad} ${w+2*pad} ${d+2*pad}">${furnSVG(t,w,d,col)}</svg><b>${esc(nm(n))}</b><small>${w}×${d}</small></div>`;
   }).join('')}</div>`).join('') + `<div class="hint">${tr(
-    `家具按真实尺寸（mm）绘制。${COARSE ? '点一下放到画面中央，或按住向右拖到平面图 / 3D 地面上的指定位置（上下滑动为滚动列表）。' : '点击添加到画面中央，或直接拖到平面图 / 3D 地面上。'}添加后可在右侧修改宽深与颜色。`,
+    `الأثاث مرسوم بمقاساته الحقيقية (mm). ${COARSE ? 'اضغط للإضافة في المركز، أو اسحب للموضع المطلوب داخل المخطط.' : 'اضغط للإضافة في المركز، أو اسحب مباشرة إلى المخطط أو المشهد ثلاثي الأبعاد.'} يمكنك تعديل المقاسات والألوان من لوحة الخصائص.`,
     `Furniture is drawn at real size (mm). ${COARSE ? 'Tap to place at the center, or hold and drag right onto the plan / 3D floor (swipe up/down to scroll).' : 'Click to add at the center, or drag onto the plan / 3D floor.'} Edit size and color in the right panel afterwards.`)}</div>`;
   document.querySelectorAll('.item').forEach(el => el.addEventListener('pointerdown', e => {
     if (e.button) return;
@@ -1598,7 +1163,7 @@ function toggleFullscreen(){
   if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   else {
     const req = de.requestFullscreen || de.webkitRequestFullscreen;
-    if (!req) return toast(tr('当前浏览器不支持网页全屏，可在 Safari 中「添加到主屏幕」后以全屏方式打开', 'Fullscreen is not supported here — in Safari, use "Add to Home Screen" to open it fullscreen'));
+    if (!req) return toast(tr('المتصفح الحالي لا يدعم وضع ملء الشاشة، يمكن إضافته للشاشة الرئيسية للاستمتاع بملء الشاشة', 'Fullscreen is not supported here — in Safari, use "Add to Home Screen" to open it fullscreen'));
     Promise.resolve(req.call(de)).catch(() => toast(tr('无法进入全屏', 'Could not enter fullscreen')));
   }
 }

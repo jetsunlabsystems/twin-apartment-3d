@@ -836,6 +836,14 @@ def generate():
     with open(index_path, "w", encoding="utf-8") as f:
         f.write(content)
 
+    # Apply comprehensive Tajawal Arabic localization
+    try:
+        from localize_tajawal_arabic import localize_content
+        from localize_all_arabic import run as run_arabic_loc
+        run_arabic_loc()
+    except Exception as e:
+        print("Localization warning:", e)
+
     print("Refined generation successful!")
     print(f"Generated {len(walls)} walls, {len(wins)} windows, {len(doors)} doors, {len(slides)} sliding doors.")
     print(f"Generated {len(rooms)} rooms, {len(furniture)} furniture items.")
