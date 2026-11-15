@@ -92,22 +92,25 @@ const leftRooms = [
     at: [2285, 19050]
   },
 
-  // 8. Grand Reception (استقبال, 7.71m x 7.15m)
+  // 8. Grand Reception (استقبال, 7.71m width with 1.20m stepped facade)
   {
     id: 'rec_l',
     name: 'صالون الاستقبال',
-    poly: [[200, 19770], [7800, 19770], [7800, 26920], [200, 26920]],
+    poly: [
+      [200, 19770], [7800, 19770],
+      [7800, 28120], [3990, 28120],
+      [3990, 26920], [200, 26920]
+    ],
     mat: 'marble',
     at: [4000, 23345]
   },
 
-  // 9. Stepped Terrace (تراس, 3.79m x 2.00m + 3.80m x 1.20m)
+  // 9. Dedicated Corner Terrace (تراس, strictly 3.79m x 2.00m corner box)
   {
     id: 'terr_l',
     name: 'التراس',
     poly: [
-      [200, 26920], [7800, 26920],
-      [7800, 28120], [3990, 28120],
+      [200, 26920], [3990, 26920],
       [3990, 28920], [200, 28920]
     ],
     mat: 'terrace',
@@ -158,7 +161,7 @@ const ROOMS = [...leftRooms, ...rightRooms, ...commonRooms];
 // 2. DOORS (Exact CAD Hinge & Swing Vectors)
 // ==========================================
 const leftDoors = [
-  // 1. Master Bedroom Door (from 1.48m corridor niche)
+  // 1. Master Bedroom Door
   {
     name: 'باب جناح النوم الرئيسي',
     rect: [4200, 4250, 4320, 5100],
@@ -248,7 +251,7 @@ const leftDoors = [
     len: 750,
     entry: false
   },
-  // 10. Apartment Main Entrance Door (from Lobby into Foyer)
+  // 10. Apartment Main Entrance Door
   {
     name: 'مدخل الشقة اليسرى',
     rect: [5920, 17450, 6040, 18450],
@@ -274,13 +277,12 @@ const rightDoors = leftDoors.map(d => ({
 const DOORS = [...leftDoors, ...rightDoors];
 
 // ==========================================
-// 3. SLIDING GLASS PATIO DOORS (Terrace)
+// 3. SLIDING GLASS PATIO DOORS (Terrace Only)
 // ==========================================
+// Only the dedicated corner terraces have sliding glass doors leading out from Reception!
 const SLIDES = [
-  { rect: [1000, 26870, 3200, 26970], v: false },
-  { rect: [4800, 26870, 7000, 26970], v: false },
-  { rect: [W_ENVELOPE - 7000, 26870, W_ENVELOPE - 4800, 26970], v: false },
-  { rect: [W_ENVELOPE - 3200, 26870, W_ENVELOPE - 1000, 26970], v: false }
+  { rect: [1200, 26870, 3200, 26970], v: false },
+  { rect: [W_ENVELOPE - 3200, 26870, W_ENVELOPE - 1200, 26970], v: false }
 ];
 
 // ==========================================
@@ -293,7 +295,8 @@ const leftWins = [
   [0, 8200, 200, 10200, 0.45, 2.4],    // Bedroom 1 West Exterior
   [0, 12300, 200, 14000, 0.45, 2.4],   // Living Room West Exterior
   [0, 15800, 200, 17400, 0.9, 2.4],    // Kitchen West Exterior
-  [0, 21500, 200, 24500, 0.45, 2.4]    // Grand Reception West Window
+  [0, 21500, 200, 24500, 0.45, 2.4],   // Grand Reception West Window
+  [4400, 28020, 7400, 28220, 0.45, 2.4] // Grand Reception South Street-Facing Window (3.80m Facade)
 ];
 
 const rightWins = leftWins.map(w => [
@@ -336,8 +339,13 @@ addW(15400, 14800, 15800, 15200, 'b');
 addW(0, 19600, 400, 20000, 'b');
 addW(15400, 19600, 15800, 20000, 'b');
 
-addW(0, 26520, 400, 26920, 'b');
-addW(15400, 26520, 15800, 26920, 'b');
+// Corner columns at terrace entrance
+addW(0, 26720, 400, 27120, 'b');
+addW(15400, 26720, 15800, 27120, 'b');
+
+// Terrace Inner Corner Column (connecting terrace to 3.80m facade wall)
+addW(3800, 26920, 4200, 27320, 'b');
+addW(W_ENVELOPE - 4200, 26920, W_ENVELOPE - 3800, 27320, 'b');
 
 // Interior Columns
 // Laundry corner column
@@ -357,9 +365,9 @@ addW(5840, 18400, 6240, 18800, 'b');
 addW(9560, 18400, 9960, 18800, 'b');
 
 // 1.20m concrete column at party wall in Grand Reception (marked 1,20 in CAD)
-addW(7700, 23000, 8100, 24200, 'b');
+addW(7700, 26920, 8100, 28120, 'b');
 
-// South terrace corner columns
+// Terrace Outer Corner Columns
 addW(0, 28520, 400, 28920, 'b');
 addW(15400, 28520, 15800, 28920, 'b');
 addW(3800, 28520, 4200, 28920, 'b');
@@ -389,7 +397,7 @@ addW(0, 14000, 200, 14800, 'e');
 addW(0, 15200, 200, 15800, 'e');
 addW(0, 17400, 200, 19600, 'e');
 addW(0, 20000, 200, 21500, 'e');
-addW(0, 24500, 200, 26520, 'e');
+addW(0, 24500, 200, 26720, 'e');
 
 // East Exterior (Symmetrical Mirror)
 addW(15600, 400, 15800, 1600, 'e');
@@ -402,12 +410,12 @@ addW(15600, 14000, 15800, 14800, 'e');
 addW(15600, 15200, 15800, 15800, 'e');
 addW(15600, 17400, 15800, 19600, 'e');
 addW(15600, 20000, 15800, 21500, 'e');
-addW(15600, 24500, 15800, 26520, 'e');
+addW(15600, 24500, 15800, 26720, 'e');
 
 // Central Structural Party Walls
 addW(7800, 400, 8000, 9660, 'b');     // Party wall between Bed 2, Laundry, Family Bath
-addW(7800, 18600, 8000, 23000, 'b');   // Party wall between Receptions (north of column)
-addW(7800, 24200, 8000, 26920, 'b');   // Party wall between Receptions (south of column)
+addW(7800, 18600, 8000, 26920, 'b');   // Party wall between Receptions
+addW(7800, 26920, 8000, 28120, 'b');   // 1.20m party wall column at facade
 
 // ==========================================
 // Left Apartment Interior Partitions
@@ -450,6 +458,15 @@ addW(200, 19650, 3500, 19770);        // Guest Bath South wall
 addW(4250, 19650, 4490, 19770);       // Guest Bath South wall jamb
 addW(4490, 19650, 7800, 19770);       // Reception North wall
 
+// Reception South Facade & Terrace Divider Walls
+addW(200, 26920, 1200, 27040, 'e');   // Terrace Door left jamb
+addW(3200, 26920, 3990, 27040, 'e');  // Terrace Door right jamb
+addW(3870, 26920, 3990, 28120, 'e');  // 1.20m Step wall connecting Terrace Door wall to 3.80m Facade
+
+// 3.80m Reception Exterior Facade (Street-Facing Window Wall)
+addW(3990, 28000, 4400, 28120, 'e');  // Left jamb of 3.80m window
+addW(7400, 28000, 7800, 28120, 'e');  // Right jamb of 3.80m window
+
 // Entrance Lobby Partitions
 addW(5920, 17300, 6040, 17450);       // Lobby Left wall top
 addW(5920, 18450, 6040, 18600);       // Lobby Left wall bottom
@@ -467,7 +484,7 @@ addW(6040, 17180, 9760, 17300, 'b');  // Staircase South wall
 addW(6040, 13570, 6160, 17180, 'b');  // Staircase West wall
 addW(9640, 13570, 9760, 17180, 'b');  // Staircase East wall
 
-// Elevator shaft enclosure (1.52m wide in center)
+// Elevator shaft enclosure
 addW(7140, 14350, 8660, 14470, 'b');  // Elevator North
 addW(7140, 16180, 8660, 16300, 'b');  // Elevator South
 addW(7140, 14470, 7260, 16180, 'b');  // Elevator West
@@ -481,18 +498,16 @@ leftPartitions.forEach(w => {
   addW(W_ENVELOPE - w[2], w[1], W_ENVELOPE - w[0], w[3], w[4]);
 });
 
-// Terrace Low Railings & Balustrades ('low')
-addW(200, 26920, 200, 28920, 'low');
-addW(200, 28920, 3990, 28920, 'low');
-addW(3990, 28120, 3990, 28920, 'low');
-addW(3990, 28120, 7800, 28120, 'low');
-addW(7800, 26920, 7800, 28120, 'low');
+// Dedicated Terrace Low Railings & Balustrades ('low')
+// Strictly enclosing the 3.79m x 2.00m corner boxes!
+addW(200, 26920, 200, 28920, 'low');   // Left Terrace West Railing (2.00m)
+addW(200, 28920, 3990, 28920, 'low');  // Left Terrace South Railing (3.79m)
+addW(3990, 28120, 3990, 28920, 'low'); // Left Terrace East Railing Return (0.80m)
 
-addW(W_ENVELOPE - 7800, 26920, W_ENVELOPE - 7800, 28120, 'low');
-addW(W_ENVELOPE - 7800, 28120, W_ENVELOPE - 3990, 28120, 'low');
-addW(W_ENVELOPE - 3990, 28120, W_ENVELOPE - 3990, 28920, 'low');
-addW(W_ENVELOPE - 3990, 28920, W_ENVELOPE - 200, 28920, 'low');
-addW(W_ENVELOPE - 200, 26920, W_ENVELOPE - 200, 28920, 'low');
+// Right Terrace (Symmetrical Mirror)
+addW(W_ENVELOPE - 200, 26920, W_ENVELOPE - 200, 28920, 'low');   // Right Terrace East Railing (2.00m)
+addW(W_ENVELOPE - 3990, 28920, W_ENVELOPE - 200, 28920, 'low');  // Right Terrace South Railing (3.79m)
+addW(W_ENVELOPE - 3990, 28120, W_ENVELOPE - 3990, 28920, 'low'); // Right Terrace West Railing Return (0.80m)
 
 // Write out floorplan.js
 const outputFloorplan = `// Architectural Floorplan Dataset - 100% Calibrated from Authentic CAD Blueprints
@@ -596,9 +611,8 @@ addTwin('rug', 'سجادة صالون استقبال كبرى', 2400, 23345, 300
 addTwin('coffeetable', 'طاولة قهوة كالاتا رخام', 2400, 23345, 1300, 650, 270, '#e8dccb');
 addTwin('tvstand', 'وحدة تلفزيون جدارية فاخرة', 7500, 23345, 2400, 400, 90, '#e2cfb4');
 
-// 11. TERRACE
+// 11. DEDICATED CORNER TERRACE (Strictly 3.79m x 2.00m)
 addTwin('plant', 'نبات زينة للتراس', 800, 28520, 500, 500, 0, '#9dbb8c');
-addTwin('plant', 'نبات فيكس كبير', 7200, 27520, 700, 700, 0, '#9dbb8c');
 
 const outputFurn = `// Default Furniture Dataset - 100% Calibrated from Authentic CAD Blueprint
 export function defaultFurniture() {

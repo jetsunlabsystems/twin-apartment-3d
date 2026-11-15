@@ -163,6 +163,19 @@ async function runQA() {
   fs.writeFileSync(path3d, Buffer.from(ss3d.data, 'base64'));
   console.log(`[QA] Saved 3D view to: ${path3d}`);
 
+  // 7. Focus Camera on Terrace and Reception in 3D by selecting the terrace room
+  console.log('[QA] Selecting Terrace in 3D to fly camera to it...');
+  await send('Runtime.evaluate', {
+    expression: `(() => {
+      window.select({ kind: 'room', id: 'terr_l' });
+    })()`
+  });
+  await new Promise(r => setTimeout(r, 2500));
+  const sst = await send('Page.captureScreenshot', { format: 'png' });
+  const patht = path.join(ARTIFACT_DIR, 'qa_3d_terrace.png');
+  fs.writeFileSync(patht, Buffer.from(sst.data, 'base64'));
+  console.log(`[QA] Saved 3D terrace view to: ${patht}`);
+
   // Clean up
   try { await fetch(`http://127.0.0.1:${PORT}/json/close/${tab.id}`); } catch(e) {}
   ws.close();
