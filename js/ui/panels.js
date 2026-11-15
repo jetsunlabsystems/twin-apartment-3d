@@ -148,7 +148,12 @@ export function roomPanel(r){
 export function bindRoomPanel(){
   const id = ui.sel.id;
   $('#rName').onchange = e => mutate(() => state.rooms[id].name = e.target.value.trim() || state.rooms[id].name);
-  document.querySelectorAll('#panel [data-mat]').forEach(b => b.onclick = () => mutate(() => state.rooms[id].mat = b.dataset.mat));
+  document.querySelectorAll('#panel [data-mat]').forEach(b => b.onclick = () => {
+    mutate(() => {
+      state.rooms[id].mat = b.dataset.mat;
+    });
+    renderPanel();
+  });
   document.querySelectorAll('#panel tr[data-fid]').forEach(tr => tr.onclick = () => select({kind:'furn', id:tr.dataset.fid}));
   $('#back').onclick = () => select(null);
 }

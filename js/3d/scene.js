@@ -16,7 +16,7 @@ import { buildFurniture } from './furniture-models.js';
 import { buildArch, doors, colliders, clearGroup, glassMat, wallMat, capMat, frameMat } from './arch-builder.js';
 
 const stage = $('#stage'), host = $('#view3d');
-const FOV = 45;
+const FOV = 58;
 const SW = () => stage?.clientWidth || window.innerWidth;
 const SH = () => stage?.clientHeight || window.innerHeight;
 
@@ -590,6 +590,8 @@ function setMode(mode) {
   stage.classList.toggle('walking', mode === 'walk');
 
   if (mode === 'walk') {
+    camera.fov = 68;
+    camera.updateProjectionMatrix();
     orbit.enabled = false;
     const d0 = DOORS.find(d => d.entry) || DOORS[0];
     const sp = d0 ? [wx(d0.h[0]) - d0.c[0] * 0.9, wz(d0.h[1]) - d0.c[1] * 0.9] : [0, 0];
@@ -597,6 +599,8 @@ function setMode(mode) {
     camera.lookAt(sp[0] + (d0 ? d0.c[0] : 0), 1.62, sp[1] + (d0 ? d0.c[1] : 1));
     $('#walkOverlay').style.display = 'flex';
   } else {
+    camera.fov = FOV;
+    camera.updateProjectionMatrix();
     stopTouchWalk();
     if (walkCtl.isLocked) walkCtl.unlock();
     $('#walkOverlay').style.display = 'none';

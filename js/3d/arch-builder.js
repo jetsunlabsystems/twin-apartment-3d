@@ -303,30 +303,41 @@ export function buildArch(ctx) {
     }
     archUp.add(fG);
 
-    // Pivotable Door Leaf
+    // Pivotable Door Leaf Group
     const pivot = new THREE.Group();
     pivot.position.set(wx(hx), 0, wz(hy));
+
+    const leaf = new THREE.Group();
     const doorWood = mat(d.entry ? '#2e1f14' : '#8a6545', { roughness: 0.38 });
     const leafW = L - 0.045;
-    const leaf = box(leafW, dh, 0.045, doorWood, leafW / 2 + 0.0225);
+
+    // Wood slab centered at leafW / 2
+    const woodMesh = box(leafW, dh, 0.04, doorWood, leafW / 2, 0, 0);
+    leaf.add(woodMesh);
 
     if (d.entry) {
       // Luxury Walnut Security Entrance Door: horizontal metal inlays & vertical ladder pull
       for (let k = 0; k < 4; k++) {
-        leaf.add(box(leafW * 0.72, 0.012, 0.048, mat('#141414', { roughness: 0.2, metalness: 0.8 }), leafW / 2 + 0.0225, 0.4 + k * 0.42, 0));
+        const yPos = 0.35 + k * 0.40;
+        const bar = box(leafW * 0.75, 0.012, 0.044, mat('#141414', { roughness: 0.2, metalness: 0.8 }), leafW / 2, yPos, 0);
+        leaf.add(bar);
       }
       // 650mm vertical brushed stainless steel ladder pull bar
-      const handleBar = cyl(0.014, 0.014, 0.65, metal('#e2e8f0'), leafW - 0.08, 0.70, 0.045);
-      const post1 = box(0.02, 0.02, 0.04, metal(), leafW - 0.08, 0.75, 0.025);
-      const post2 = box(0.02, 0.02, 0.04, metal(), leafW - 0.08, 1.25, 0.025);
+      const handleX = leafW - 0.07;
+      const handleBar = cyl(0.013, 0.013, 0.65, metal('#e2e8f0'), handleX, 0.70, 0.038);
+      const post1 = box(0.018, 0.018, 0.035, metal(), handleX, 0.75, 0.02);
+      const post2 = box(0.018, 0.018, 0.035, metal(), handleX, 1.25, 0.02);
       leaf.add(handleBar, post1, post2);
     } else {
-      // Natural French Oak Interior Door: molded panel reliefs & ergonomic lever handle
+      // Natural French Oak Interior Door: subtle panel reliefs & ergonomic lever handle
       for (let k = 0; k < 3; k++) {
-        leaf.add(box(leafW * 0.78, 0.01, 0.048, mat('#5a4029', { roughness: 0.48 }), leafW / 2 + 0.0225, 0.45 + k * 0.50, 0));
+        const yPos = 0.40 + k * 0.48;
+        const groove = box(leafW * 0.78, 0.01, 0.042, mat('#5a4029', { roughness: 0.48 }), leafW / 2, yPos, 0);
+        leaf.add(groove);
       }
-      const escPlate = box(0.045, 0.15, 0.052, metal(), leafW - 0.06, 0.95, 0);
-      const lever = box(0.12, 0.02, 0.022, metal(), leafW - 0.02, 0.98, 0.038);
+      const handleX = leafW - 0.06;
+      const escPlate = box(0.04, 0.14, 0.046, metal(), handleX, 0.90, 0);
+      const lever = box(0.11, 0.018, 0.018, metal(), handleX + 0.03, 0.96, 0.032);
       leaf.add(escPlate, lever);
     }
 
@@ -339,7 +350,11 @@ export function buildArch(ctx) {
     if (door.a0 - door.a1 > Math.PI) door.a1 += Math.PI * 2;
     door.cur = door.a1;
     pivot.rotation.y = door.cur;
+    
+    // Tag all door parts for raycasting
+    pivot.userData.door = door;
     leaf.userData.door = door;
+    woodMesh.userData.door = door;
 
     doors.push(door);
     archUp.add(pivot);

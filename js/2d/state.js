@@ -56,9 +56,7 @@ export function save() {
   } catch (e) {}
 }
 
-export function snap() {
-  return JSON.stringify({ furniture: state.furniture, demolished: state.demolished, measures: state.measures });
-}
+export const snap = () => JSON.stringify(state);
 
 let syncCallbacks = [];
 export function onStateChange(cb) {
@@ -68,13 +66,16 @@ export function onStateChange(cb) {
 export function notifyChange() {
   save();
   syncCallbacks.forEach(cb => cb());
+  if (typeof window !== 'undefined' && typeof window.renderAll === 'function') {
+    window.renderAll();
+  }
 }
 
 export function commit(before) {
   const after = snap();
   if (before === after) return;
   undoStack.push(before);
-  if (undoStack.length > 50) undoStack.shift();
+  if (undoStack.length > 150) undoStack.shift();
   redoStack.length = 0;
   notifyChange();
 }
@@ -83,6 +84,9 @@ export function mutate(fn) {
   const b = snap();
   fn();
   commit(b);
+  if (typeof window !== 'undefined' && typeof window.renderAll === 'function') {
+    window.renderAll();
+  }
 }
 
 export function undo() {
