@@ -852,6 +852,14 @@ export function relang() {
   if (inited) buildLabels();
 }
 
+export function setNight(val) {
+  opt.night = (val !== undefined) ? !!val : !opt.night;
+  const nightBtn = document.querySelector('button[data-t="night"]');
+  if (nightBtn) nightBtn.classList.toggle('on', opt.night);
+  applyLight();
+  return opt.night;
+}
+
 export const View3D = {
   enter,
   exit,
@@ -860,6 +868,9 @@ export const View3D = {
   shot,
   groundAt,
   flyToRoom: id => active && !anim && flyToRoom(id),
-  walking: () => active && opt.mode === 'walk'
+  walking: () => active && opt.mode === 'walk',
+  opt,
+  applyLight,
+  setNight
 };
 window.View3D = View3D;

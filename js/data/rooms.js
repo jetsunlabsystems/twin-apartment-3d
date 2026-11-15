@@ -200,7 +200,7 @@ export const ROOMS = [
     poly: [[5840,9660],[9960,9660],[9960,13230],[5840,13230]],
     mat: 'antislip',
     wallMat: 'mist',
-    at: [7900,11445], counted: false
+    at: null, counted: false
   },
   {
     id: 'stair_core',
@@ -208,7 +208,7 @@ export const ROOMS = [
     poly: [[6040,13450],[9760,13450],[9760,17300],[6040,17300]],
     mat: 'tile800',
     wallMat: 'alabaster',
-    at: [7900,15375], counted: false
+    at: null, counted: false
   },
   {
     id: 'entry_lobby',

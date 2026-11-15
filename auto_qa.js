@@ -72,6 +72,9 @@ async function runQA() {
   await new Promise(r => ws.onopen = r);
   await send('Page.enable');
   await send('Runtime.enable');
+  await send('Network.enable');
+  await send('Network.setCacheDisabled', { cacheDisabled: true });
+  await send('Page.reload', { ignoreCache: true });
   await send('Page.bringToFront');
 
   console.log('[QA] Waiting 3.5s for initial 2D render...');
@@ -191,25 +194,28 @@ async function runQA() {
   });
   console.log('[QA] 3D Floor Material Update Result:', res3DMat.result.value);
 
-  // 5b. Test Wall Paint Selection in 3D Mode
-  console.log('[QA] Changing wall paint while in 3D mode (to royal navy)...');
+  // 5b. Test Wall Paint & Texture Selection in 3D Mode
+  console.log('[QA] Changing wall finish to KSA Najdi Clay in Reception and Oak Slats in Bedroom...');
   const res3DPaint = await send('Runtime.evaluate', {
     expression: `(() => {
-      const curId = window.ui.sel?.id;
-      if (!curId) return { error: 'No room selected' };
-      const navyBtn = document.querySelector('#panel [data-paint="navy"]');
-      if (navyBtn) {
-        navyBtn.click();
-        return {
-          roomId: curId,
-          updatedWallMat: window.state.rooms[curId].wallMat
-        };
-      }
-      return { error: 'Navy paint button not found' };
+      // 1. Reception -> Najdi Clay
+      window.select({ kind: 'room', id: 'rec_l' });
+      const clayBtn = document.querySelector('#panel [data-paint="najdi_clay"]');
+      if (clayBtn) clayBtn.click();
+
+      // 2. Master Bed -> Wood Slats
+      window.select({ kind: 'room', id: 'm_bed_l' });
+      const slatsBtn = document.querySelector('#panel [data-paint="wood_slats"]');
+      if (slatsBtn) slatsBtn.click();
+
+      return {
+        rec_wall: window.state.rooms['rec_l'].wallMat,
+        bed_wall: window.state.rooms['m_bed_l'].wallMat
+      };
     })()`,
     returnByValue: true
   });
-  console.log('[QA] 3D Wall Paint Update Result:', res3DPaint.result.value);
+  console.log('[QA] 3D Wall Paint & Texture Update Result:', res3DPaint.result.value);
 
   await new Promise(r => setTimeout(r, 1500));
 
@@ -292,24 +298,21 @@ async function runQA() {
   console.log(`[QA] Saved Furniture FAB view to: ${pathf}`);
 
   // 9. Test Night Mode Toggle & Capture Night Scene
-  console.log('[QA] Toggling Night Mode in 3D...');
+  console.log('[QA] Toggling Night Mode in 3D via View3D.setNight(true)...');
   const resNight = await send('Runtime.evaluate', {
     expression: `(() => {
-      const nightBtn = document.querySelector('button[data-t="night"]');
-      if (nightBtn) {
-        nightBtn.click();
-        return {
-          clicked: true,
-          nightActive: window.View3D?.opt?.night
-        };
+      window.select(null);
+      if (window.View3D?.setNight) {
+        const isNight = window.View3D.setNight(true);
+        return { clicked: true, isNight };
       }
-      return { error: 'Night button not found' };
+      return { error: 'View3D.setNight not found' };
     })()`,
     returnByValue: true
   });
   console.log('[QA] Night Mode Toggle Result:', resNight.result.value);
 
-  await new Promise(r => setTimeout(r, 2000));
+  await new Promise(r => setTimeout(r, 2500));
   const ssn = await send('Page.captureScreenshot', { format: 'png' });
   const pathn = path.join(ARTIFACT_DIR, 'qa_3d_night_mode.png');
   fs.writeFileSync(pathn, Buffer.from(ssn.data, 'base64'));

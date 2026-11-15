@@ -1,6 +1,7 @@
 // Procedural Canvas Textures for PBR Architectural Flooring
 import * as THREE from 'three';
 import { rng, rgbK } from '../config.js';
+import { WALL_PAINTS } from '../data/materials.js';
 
 export const TEX = {
   marble:   { sx: 1.2, sy: 1.2, base: '#fbf9f5', grout: '#ddd6c9', rough: 0.10 },
@@ -182,5 +183,170 @@ export function floorMat(kind, renderer) {
     map: t,
     roughness: s.rough,
     metalness: kind === 'marble' ? 0.05 : 0
+  }));
+}
+
+// Procedural PBR Wall Materials (Slats, Heritage Plasters, Stone, Linen, Microcement)
+export const wallMats = {};
+
+export function wallTextureMat(kind, renderer) {
+  if (wallMats[kind]) return wallMats[kind];
+  const p = WALL_PAINTS[kind] || WALL_PAINTS.alabaster;
+
+  if (!p.hasTexture) {
+    return (wallMats[kind] = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(p.sw),
+      roughness: p.roughness || 0.88,
+      metalness: p.metalness || 0
+    }));
+  }
+
+  const cv = document.createElement('canvas');
+  cv.width = 512;
+  cv.height = 512;
+  const g = cv.getContext('2d');
+  const W = cv.width, Hh = cv.height;
+  const R = rng(kind.length * 811 + 37);
+
+  // Fill base color
+  g.fillStyle = p.sw;
+  g.fillRect(0, 0, W, Hh);
+
+  if (kind === 'wood_slats' || kind === 'walnut_slats') {
+    const isWalnut = kind === 'walnut_slats';
+    const numSlats = 16;
+    const slatW = W / numSlats;
+    const gapW = 4;
+    const plankW = slatW - gapW;
+
+    for (let i = 0; i < numSlats; i++) {
+      const x = i * slatW;
+      const toneK = 0.94 + R() * 0.12;
+      g.fillStyle = rgbK(p.sw, toneK);
+      g.fillRect(x, 0, plankW, Hh);
+
+      // Vertical wood grain lines
+      g.strokeStyle = isWalnut ? '#2c1c11' : '#8e6b40';
+      g.globalAlpha = 0.28;
+      g.lineWidth = 1.0;
+      for (let k = 0; k < 4; k++) {
+        const gx = x + 2 + R() * (plankW - 4);
+        g.beginPath();
+        g.moveTo(gx, 0);
+        for (let y = 0; y <= Hh; y += 32) {
+          g.lineTo(gx + Math.sin(y * 0.03 + k) * 1.5, y);
+        }
+        g.stroke();
+      }
+      g.globalAlpha = 1.0;
+
+      // Slat edge highlight
+      g.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      g.fillRect(x, 0, 1.5, Hh);
+
+      // Deep dark shadow gap between slats
+      g.fillStyle = isWalnut ? '#110a06' : '#1c140c';
+      g.fillRect(x + plankW, 0, gapW, Hh);
+    }
+  } else if (kind === 'marble_slab') {
+    for (let c = 0; c < 12; c++) {
+      const grad = g.createRadialGradient(R() * W, R() * Hh, 20, R() * W, R() * Hh, 240);
+      grad.addColorStop(0, 'rgba(240,234,222,0.40)');
+      grad.addColorStop(1, 'rgba(252,250,246,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, W, Hh);
+    }
+    const veinColors = ['rgba(195,155,95,0.48)', 'rgba(125,120,110,0.38)', 'rgba(215,175,110,0.32)'];
+    for (let k = 0; k < 7; k++) {
+      g.strokeStyle = veinColors[k % veinColors.length];
+      g.lineWidth = 1.5 + R() * 3.5;
+      g.beginPath();
+      let x = R() * W, y = 0;
+      g.moveTo(x, y);
+      for (let step = 0; step < 4; step++) {
+        const nx = x + (R() - 0.4) * W * 0.5;
+        const ny = y + Hh * 0.25;
+        g.bezierCurveTo(x + (R() - 0.5) * 80, y + 40, nx + (R() - 0.5) * 80, ny - 40, nx, ny);
+        x = nx; y = ny;
+      }
+      g.stroke();
+    }
+  } else if (kind === 'najdi_clay') {
+    for (let k = 0; k < 2800; k++) {
+      const alpha = 0.04 + R() * 0.08;
+      g.fillStyle = R() > 0.4 ? `rgba(90, 65, 45, ${alpha})` : `rgba(245, 230, 205, ${alpha})`;
+      g.fillRect(R() * W, R() * Hh, 2 + R() * 2, 2 + R() * 2);
+    }
+    g.strokeStyle = 'rgba(235, 220, 185, 0.55)';
+    g.lineWidth = 1.2;
+    for (let k = 0; k < 90; k++) {
+      const sx = R() * W, sy = R() * Hh;
+      const angle = R() * Math.PI;
+      const len = 3 + R() * 6;
+      g.beginPath();
+      g.moveTo(sx, sy);
+      g.lineTo(sx + Math.cos(angle) * len, sy + Math.sin(angle) * len);
+      g.stroke();
+    }
+  } else if (kind === 'hejaz_stone') {
+    for (let k = 0; k < 2200; k++) {
+      g.fillStyle = `rgba(80, 70, 60, ${R() * 0.06})`;
+      g.beginPath();
+      g.arc(R() * W, R() * Hh, 1 + R() * 3, 0, Math.PI * 2);
+      g.fill();
+    }
+    for (let k = 0; k < 1500; k++) {
+      g.fillStyle = `rgba(255, 255, 255, ${R() * 0.08})`;
+      g.fillRect(R() * W, R() * Hh, 1.5, 1.5);
+    }
+  } else if (kind === 'woven_linen') {
+    const step = 6;
+    g.strokeStyle = 'rgba(120, 105, 85, 0.15)';
+    g.lineWidth = 1.0;
+    for (let x = 0; x <= W; x += step) {
+      g.beginPath(); g.moveTo(x, 0); g.lineTo(x, Hh); g.stroke();
+    }
+    g.strokeStyle = 'rgba(255, 255, 255, 0.20)';
+    for (let y = 0; y <= Hh; y += step) {
+      g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+    }
+    for (let k = 0; k < 1200; k++) {
+      g.fillStyle = `rgba(100, 85, 65, ${R() * 0.06})`;
+      g.fillRect(R() * W, R() * Hh, 1.5, 1.5);
+    }
+  } else if (kind === 'microcement') {
+    for (let c = 0; c < 14; c++) {
+      const grad = g.createRadialGradient(R() * W, R() * Hh, 15, R() * W, R() * Hh, 180);
+      grad.addColorStop(0, R() > 0.5 ? 'rgba(160,165,168,0.22)' : 'rgba(235,238,240,0.20)');
+      grad.addColorStop(1, 'rgba(203,206,206,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, W, Hh);
+    }
+    for (let k = 0; k < 1500; k++) {
+      g.fillStyle = `rgba(40,45,50,${R() * 0.04})`;
+      g.fillRect(R() * W, R() * Hh, 1, 1);
+    }
+  }
+
+  const t = new THREE.CanvasTexture(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  if (kind === 'wood_slats' || kind === 'walnut_slats') {
+    t.repeat.set(2, 1);
+  } else if (kind === 'woven_linen') {
+    t.repeat.set(4, 4);
+  } else if (kind === 'najdi_clay' || kind === 'hejaz_stone' || kind === 'microcement') {
+    t.repeat.set(2, 2);
+  } else {
+    t.repeat.set(1, 1);
+  }
+  t.colorSpace = THREE.SRGBColorSpace;
+  if (renderer?.capabilities) {
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  }
+
+  return (wallMats[kind] = new THREE.MeshStandardMaterial({
+    map: t,
+    roughness: p.roughness || 0.88,
+    metalness: p.metalness || 0
   }));
 }

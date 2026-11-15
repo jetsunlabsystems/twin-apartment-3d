@@ -155,7 +155,19 @@ export function roomPanel(r){
   const wallArea = perim(r.poly) * 2.8;
   const curPaint = WALL_PAINTS[curWallMat] || WALL_PAINTS.alabaster;
   const wallCost = Math.round(wallArea * curPaint.price);
-  const paints = Object.entries(WALL_PAINTS).map(([k, p]) => `<button class="mat ${k===curWallMat?'on':''}" data-paint="${k}"><i style="background:${p.sw}"></i><span>${nm(p.name)}<small>${p.price} ر.س / م²</small></span></button>`).join('');
+
+  const paintGroups = [
+    { id: 'ksa', label: tr('🇸🇦 طراز وتراث سعودي وإقليمي', '🇸🇦 KSA & Regional Heritage') },
+    { id: 'texture', label: tr('✨ شرائح خشبية وخامات جدارية فاخرة', '✨ Wall Slats & Luxury Textures') },
+    { id: 'paint', label: tr('🎨 دهانات معمارية ومودرن', '🎨 Minimalist Architectural Paints') }
+  ];
+
+  const paints = paintGroups.map(grp => {
+    const items = Object.entries(WALL_PAINTS).filter(([k, p]) => (p.category || 'paint') === grp.id);
+    if (!items.length) return '';
+    const btns = items.map(([k, p]) => `<button class="mat ${k===curWallMat?'on':''}" data-paint="${k}"><i style="background:${p.sw};${p.hasTexture?'box-shadow:inset 0 0 0 1px rgba(0,0,0,0.18)':''}"></i><span>${nm(p.name)}<small>${p.price} ر.س / م²</small></span></button>`).join('');
+    return `<div class="mat-group" style="margin-bottom:8px"><div class="group-title" style="font-size:11.5px;font-weight:700;color:var(--text-muted);margin:6px 0 4px 0">${grp.label}</div><div class="mats">${btns}</div></div>`;
+  }).join('');
 
   return `<section><h3>${tr('الغرفة','Room')}</h3>
     <div class="form"><label class="full">${tr('اسم الغرفة','Name')}<input id="rName" value="${esc(nm(st.name))}"></label></div>
@@ -167,8 +179,10 @@ export function roomPanel(r){
     <div class="muted">${tr(`مساحة الجدران (ارتفاع 2.8 م، بدون خصم الفتحات) تقريباً ${fmt(wallArea,1)} م²`, `Wall area (2.8m ceiling, openings not deducted) ≈ ${fmt(wallArea,1)} m²`)}</div></section>
   <section><h3>${tr('نوع وتشطيب الأرضية','Flooring Material')}</h3><div class="mats">${mats}</div>
     <div class="total"><span>${tr('تقدير تكلفة الأرضيات','Flooring estimate')}</span><b>${Math.round(a*MATS[st.mat].price*1.05).toLocaleString()} ر.س</b></div></section>
-  <section><h3>${tr('لون ودهان الجدران','Wall Paint & Color')}</h3><div class="mats">${paints}</div>
-    <div class="total"><span>${tr('تقدير تكلفة الدهانات (ارتفاع 2.8 م)','Wall paint estimate (2.8m)')}</span><b>${wallCost.toLocaleString()} ر.س</b></div></section>
+  <section><h3>${tr('تشطيب ودهان الجدران','Wall Paint & Textures')}</h3>
+    ${paints}
+    ${curPaint.desc ? `<div class="muted" style="margin-top:6px;font-size:11px;line-height:1.4;background:rgba(0,0,0,0.03);padding:6px 8px;border-radius:6px">💡 ${curPaint.desc}</div>` : ''}
+    <div class="total" style="margin-top:8px"><span>${tr('تقدير تكلفة الجدران (ارتفاع 2.8 م)','Wall finish estimate (2.8m)')}</span><b>${wallCost.toLocaleString()} ر.س</b></div></section>
   <section><h3>${tr('الأثاث داخل الغرفة','Furniture in room')} <small>${tr(`${inside.length} قطعة`, `${inside.length} items`)}</small></h3>
     <table>${inside.map(f => `<tr class="click" data-fid="${f.id}"><td>${esc(nm(f.name))}</td><td class="r muted">${f.w}×${f.d}</td></tr>`).join('') || `<tr><td class="muted">${tr('لا يوجد أثاث','None')}</td></tr>`}</table>
     <div class="actions"><button class="btn" id="back">${tr('← العودة للملخص','← Back to overview')}</button></div></section>`;
