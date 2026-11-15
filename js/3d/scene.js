@@ -45,7 +45,14 @@ export function init3D() {
 
   labelRenderer = new CSS2DRenderer();
   labelRenderer.setSize(SW(), SH());
-  Object.assign(labelRenderer.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
+  Object.assign(labelRenderer.domElement.style, {
+    position: 'absolute',
+    top: '0px',
+    left: '0px',
+    inset: '0px',
+    direction: 'ltr',
+    pointerEvents: 'none'
+  });
   host.appendChild(labelRenderer.domElement);
 
   scene = new THREE.Scene();
@@ -226,7 +233,9 @@ export function buildLabels() {
   ROOMS.filter(r => r.at).forEach(r => {
     const el = document.createElement('div');
     el.className = 'rlabel';
-    el.innerHTML = `<span>${esc(nm(state.rooms?.[r.id]?.name || r.name))}</span><small>${area(r.poly).toFixed(1)}m²</small>`;
+    el.style.top = '0px';
+    el.style.left = '0px';
+    el.innerHTML = `<span>${esc(nm(state.rooms?.[r.id]?.name || r.name))}</span><small class="rarea">${area(r.poly).toFixed(1)}m²</small>`;
     el.onclick = (e) => {
       e.stopPropagation();
       select({ kind: 'room', id: r.id });
@@ -234,8 +243,9 @@ export function buildLabels() {
       flyToRoom(r.id);
     };
     const o = new CSS2DObject(el);
-    // Sit slightly above floor/furniture (y = 0.85m), floating cleanly matching reference render
-    o.position.set(wx(r.at[0]), 0.85, wz(r.at[1]));
+    // Position cleanly above furniture & rugs (y = 0.40m) to eliminate perspective parallax drift
+    o.position.set(wx(r.at[0]), 0.40, wz(r.at[1]));
+    o.userData = { roomId: r.id, at: r.at };
     o.visible = labelG.visible && opt.labels;
     labelG.add(o);
   });
@@ -262,12 +272,90 @@ export function buildLabels() {
   }
 }
 
+const labelRay = new THREE.Raycaster();
+const camDir = new THREE.Vector3();
+const toLabel = new THREE.Vector3();
+const camPos = new THREE.Vector3();
+
+export function updateLabels() {
+  if (!labelG || !labelG.visible || !opt.labels || opt.mode !== 'orbit' || !camera) return;
+
+  camera.getWorldPosition(camPos);
+  camera.getWorldDirection(camDir);
+
+  const isLowEyeLevel = camPos.y < 2.2;
+  const occluders = isLowEyeLevel ? (archUp?.children?.filter(c => c.isMesh && c.userData?.isWall && !c.userData?.isCeiling) || []) : [];
+
+  labelG.children.forEach(o => {
+    const el = o.element;
+    if (!el) return;
+
+    toLabel.subVectors(o.position, camPos);
+    const dist = toLabel.length();
+
+    // 1. Cull if behind camera: dot product with forward view direction
+    toLabel.normalize();
+    const dot = toLabel.dot(camDir);
+    if (dot <= 0.05) {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      return;
+    }
+
+    // 2. High & Angle Orbit Overview: All room labels clearly visible
+    if (!isLowEyeLevel) {
+      if (dist > 65) {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+      } else {
+        const alpha = dist > 50 ? Math.max(0, 1 - (dist - 50) / 15) : 1;
+        el.style.opacity = alpha.toFixed(2);
+        el.style.pointerEvents = alpha > 0.4 ? 'auto' : 'none';
+        el.style.zIndex = Math.max(1, Math.round(1000 - dist * 20));
+      }
+      return;
+    }
+
+    // 3. Low Eye-Level Mode (looking horizontally or through windows):
+    if (dist > 18) {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      return;
+    }
+
+    // Raycast wall occlusion culling to prevent background bedrooms projecting through living room windows
+    labelRay.set(camPos, toLabel);
+    const hits = labelRay.intersectObjects(occluders, false);
+    let isOccluded = false;
+    for (let i = 0; i < hits.length; i++) {
+      if (hits[i].distance < dist - 0.45) {
+        isOccluded = true;
+        break;
+      }
+    }
+
+    if (isOccluded) {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+    } else {
+      const alpha = dist > 14 ? Math.max(0, 1 - (dist - 14) / 4) : 1;
+      el.style.opacity = alpha.toFixed(2);
+      el.style.pointerEvents = alpha > 0.4 ? 'auto' : 'none';
+      el.style.zIndex = Math.max(1, Math.round(1000 - dist * 25));
+    }
+  });
+}
+
 export function showLabels(v) {
   labelG.visible = !!v;
   labelG.children.forEach(o => {
     o.visible = !!v;
-    if (o.element) o.element.style.display = v ? '' : 'none';
+    if (o.element) {
+      o.element.style.display = v ? '' : 'none';
+      if (!v) o.element.style.opacity = '0';
+    }
   });
+  if (v) updateLabels();
   if (labelRenderer && scene && camera) {
     labelRenderer.render(scene, camera);
   }
@@ -833,6 +921,7 @@ function loop() {
     });
 
     updateSel();
+    updateLabels();
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
   } catch (err) {

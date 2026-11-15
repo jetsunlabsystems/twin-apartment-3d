@@ -95,6 +95,7 @@ export function wallBox(rect, yb, yt, group, opt, customMat) {
   const m = customMat || [wallMat, wallMat, capMat, wallMat, wallMat, wallMat];
   const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
   o.position.set(cx, cy, cz);
+  o.userData.isWall = true;
   o.castShadow = true;
   o.receiveShadow = true;
   if (group) group.add(o);
@@ -169,6 +170,7 @@ export function buildArch(ctx) {
     const ceil = new THREE.Mesh(cg, mat('#fbfaf7', { roughness: 1 }));
     ceil.position.y = H;
     ceil.visible = top >= H;
+    ceil.userData.isCeiling = true;
     archUp.add(ceil);
 
     // Ceiling recessed downlight and warm interior night illumination

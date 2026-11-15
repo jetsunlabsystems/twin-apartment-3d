@@ -74,11 +74,17 @@ async function runQA() {
   await send('Runtime.enable');
   await send('Network.enable');
   await send('Network.setCacheDisabled', { cacheDisabled: true });
-  await send('Page.reload', { ignoreCache: true });
   await send('Page.bringToFront');
 
-  console.log('[QA] Waiting 3.5s for initial 2D render...');
-  await new Promise(r => setTimeout(r, 3500));
+  console.log('[QA] Waiting for document ready...');
+  await send('Runtime.evaluate', {
+    expression: `new Promise(r => {
+      if (document.readyState === 'complete' && window.state && window.ROOMS) r();
+      else setTimeout(r, 2000);
+    })`,
+    awaitPromise: true
+  });
+  await new Promise(r => setTimeout(r, 2500));
 
   // 1. Take 2D Screenshot
   const ss2d = await send('Page.captureScreenshot', { format: 'png' });
@@ -147,6 +153,12 @@ async function runQA() {
 
   console.log('[QA] Waiting 3.5s for 3D construction & camera transition...');
   await new Promise(r => setTimeout(r, 3500));
+
+  // 3b. Capture 3D Overview with Floating Labels
+  const ssOverview = await send('Page.captureScreenshot', { format: 'png' });
+  const pathOverview = path.join(ARTIFACT_DIR, 'qa_3d_overview_labels.png');
+  fs.writeFileSync(pathOverview, Buffer.from(ssOverview.data, 'base64'));
+  console.log(`[QA] Saved 3D Overview view with Labels to: ${pathOverview}`);
 
   // 4. Verify 3D Room Labels and Floor Material in 3D
   const res3D = await send('Runtime.evaluate', {
@@ -225,11 +237,12 @@ async function runQA() {
   fs.writeFileSync(path3d, Buffer.from(ss3d.data, 'base64'));
   console.log(`[QA] Saved 3D view to: ${path3d}`);
 
-  // 7. Focus Camera on Terrace and Reception in 3D by selecting the terrace room
+  // 7. Focus Camera on Terrace in 3D
   console.log('[QA] Selecting Terrace in 3D to fly camera to it...');
   await send('Runtime.evaluate', {
     expression: `(() => {
       window.select({ kind: 'room', id: 'terr_l' });
+      if (window.View3D?.flyToRoom) window.View3D.flyToRoom('terr_l');
     })()`
   });
   await new Promise(r => setTimeout(r, 2500));
@@ -243,6 +256,7 @@ async function runQA() {
   await send('Runtime.evaluate', {
     expression: `(() => {
       window.select({ kind: 'room', id: 'stair_core' });
+      if (window.View3D?.flyToRoom) window.View3D.flyToRoom('stair_core');
     })()`
   });
   await new Promise(r => setTimeout(r, 2500));
@@ -256,6 +270,7 @@ async function runQA() {
   await send('Runtime.evaluate', {
     expression: `(() => {
       window.select({ kind: 'room', id: 'rec_l' });
+      if (window.View3D?.flyToRoom) window.View3D.flyToRoom('rec_l');
     })()`
   });
   await new Promise(r => setTimeout(r, 2500));
