@@ -7,7 +7,7 @@ import { state, ui, getF, mutate, snap, commit } from '../2d/state.js';
 import { select, rotateSel, duplicateSel, deleteSel } from '../2d/interactions.js';
 import { is3D } from './toolbar.js';
 
-/* ======================= 右侧面板 ======================= */
+/* ======================= Properties Panel ======================= */
 
 export function renderPanel(){
   renderFab();
@@ -75,7 +75,7 @@ export function bindOverview(){
   $('#clearFurn').onclick = clearLayout;
 }
 
-// 底部浮动工具条：触屏没有键盘，旋转 / 复制 / 删除都放在这里
+// Floating Action Bar (Touch / Mobile Quick Actions: Rotate, Duplicate, Delete, Floor Properties)
 export function renderFab(){
   const fab = $('#fab'), f = ui.sel?.kind === 'furn' && getF(ui.sel.id), r = ui.sel?.kind === 'room' && ROOMS.find(r => r.id === ui.sel.id);
   if (!f && !r){ fab.classList.remove('show'); return; }
@@ -94,13 +94,12 @@ export function renderFab(){
 export function clearLayout(){
   const n = state.furniture.length;
   if (!n) return toast(tr('لا يوجد أثاث حالياً لإفراغه', 'There is no furniture to clear'));
-  if (!confirm(tr(`确定清空全部 ${n} 件家具 / 家电吗？\n墙体、地面材料和测量线会保留，可点「撤销」恢复。`, `Remove all ${n} furniture / appliance items?\nWalls, flooring and measurements are kept. You can Undo this.`))) return;
+  if (!confirm(tr(`هل أنت متأكد من حذف كافة قطع الأثاث والأجهزة (${n} قطعة)؟\nسيتم الاحتفاظ بالجدران والأرضيات والقياسات، ويمكنك التراجع لاحقاً.`, `Remove all ${n} furniture / appliance items?\nWalls, flooring and measurements are kept. You can Undo this.`))) return;
   ui.sel = null; mutate(() => state.furniture = []);
   toast(tr('تم إفراغ التأثيث، يمكنك الضغط على «تراجع» للاستعادة', 'Layout cleared — Undo to restore'));
 }
 
-/* 侧栏开合：which = 'lib' | 'panel' | null，open 不传则切换。
- * 宽屏：侧栏在布局中收起 / 展开（记住选择）；窄屏：侧栏是浮层抽屉，一次只开一个，which = null 表示全部关闭 */
+/* Sidebar Drawer Management: which = 'lib' | 'panel' | null */
 const PANES = 'huxing-panes';
 const panes = (() => { try { return JSON.parse(localStorage.getItem(PANES)) || {}; } catch(e) { return {}; } })();
 export function drawer(which, open){
@@ -122,9 +121,9 @@ export function syncPaneBtns(){
   const els = {lib:$('aside.lib'), panel:$('aside.right')}, n = narrow();
   const vis = k => n ? els[k].classList.contains('open') : !panes[k === 'lib' ? 'hideLib' : 'hidePanel'];
   $('#tgLib').classList.toggle('on', vis('lib')); $('#tgPanel').classList.toggle('on', vis('panel'));
-  $('#tgLib').title = vis('lib') ? tr('收起家具库 ( [ )', 'Hide library ( [ )') : tr('展开家具库 ( [ )', 'Show library ( [ )');
-  $('#tgPanel').title = vis('panel') ? tr('收起属性面板 ( ] )', 'Hide properties ( ] )') : tr('展开属性面板 ( ] )', 'Show properties ( ] )');
-  $('#stage').classList.toggle('drawer-panel', n && vis('panel'));   // 属性抽屉盖住画面时让出底部工具条
+  $('#tgLib').title = vis('lib') ? tr('إخفاء مكتبة الأثاث ( [ )', 'Hide library ( [ )') : tr('عرض مكتبة الأثاث ( [ )', 'Show library ( [ )');
+  $('#tgPanel').title = vis('panel') ? tr('إخفاء لوحة الخصائص ( ] )', 'Hide properties ( ] )') : tr('عرض لوحة الخصائص ( ] )', 'Show properties ( ] )');
+  $('#stage').classList.toggle('drawer-panel', n && vis('panel'));
 }
 export function closeDrawers(){ if (narrow()) drawer(null); }
 
@@ -138,12 +137,12 @@ export function roomPanel(r){
       <div><small>${tr('المحيط','Perimeter')}</small><span class="big">${fmt(perim(r.poly),1)}</span> m</div>
       <div><small>${tr('العرض','Width')}</small><span class="big">${x1-x0}</span> mm</div>
       <div><small>${tr('العمق','Depth')}</small><span class="big">${y1-y0}</span> mm</div></div>
-    <div class="muted">${tr(`墙面面积（层高 2.8m，未扣门窗）约 ${fmt(perim(r.poly)*2.8,1)} m²`, `Wall area (2.8m ceiling, openings not deducted) ≈ ${fmt(perim(r.poly)*2.8,1)} m²`)}</div></section>
+    <div class="muted">${tr(`مساحة الجدران (ارتفاع 2.8 م، بدون خصم الفتحات) تقريباً ${fmt(perim(r.poly)*2.8,1)} م²`, `Wall area (2.8m ceiling, openings not deducted) ≈ ${fmt(perim(r.poly)*2.8,1)} m²`)}</div></section>
   <section><h3>${tr('نوع الأرضية','Flooring')}</h3><div class="mats">${mats}</div>
     <div class="total"><span>${tr('تقدير التكلفة','Estimated cost')}</span><b>${Math.round(a*MATS[st.mat].price*1.05).toLocaleString()} ر.س</b></div></section>
-  <section><h3>${tr('الأثاث داخل الغرفة','Furniture in room')} <small>${tr(`${inside.length} 件`, `${inside.length} items`)}</small></h3>
-    <table>${inside.map(f => `<tr class="click" data-fid="${f.id}"><td>${esc(nm(f.name))}</td><td class="r muted">${f.w}×${f.d}</td></tr>`).join('') || `<tr><td class="muted">${tr('暂无','None')}</td></tr>`}</table>
-    <div class="actions"><button class="btn" id="back">${tr('← 返回总览','← Back to overview')}</button></div></section>`;
+  <section><h3>${tr('الأثاث داخل الغرفة','Furniture in room')} <small>${tr(`${inside.length} قطعة`, `${inside.length} items`)}</small></h3>
+    <table>${inside.map(f => `<tr class="click" data-fid="${f.id}"><td>${esc(nm(f.name))}</td><td class="r muted">${f.w}×${f.d}</td></tr>`).join('') || `<tr><td class="muted">${tr('لا يوجد أثاث','None')}</td></tr>`}</table>
+    <div class="actions"><button class="btn" id="back">${tr('← العودة للملخص','← Back to overview')}</button></div></section>`;
 }
 export function bindRoomPanel(){
   const id = ui.sel?.id;
@@ -168,23 +167,23 @@ export function bindRoomPanel(){
 }
 
 export function furnPanel(f){
-  return `<section><h3>${tr('家具属性','Furniture')}</h3>
+  return `<section><h3>${tr('خصائص القطعة','Furniture')}</h3>
     <div class="form">
-      <label class="full">${tr('اسم الغرفة','Name')}<input id="fName" value="${esc(nm(f.name))}"></label>
-      <label>${tr('宽','Width')} (mm)<input type="number" id="fW" value="${f.w}" min="50" step="10"></label>
-      <label>${tr('深','Depth')} (mm)<input type="number" id="fD" value="${f.d}" min="50" step="10"></label>
-      <label>${tr('中心','Center')} X (mm)<input type="number" id="fX" value="${Math.round(f.cx)}" step="10"></label>
-      <label>${tr('中心','Center')} Y (mm)<input type="number" id="fY" value="${Math.round(f.cy)}" step="10"></label>
-      <label>${tr('旋转','Rotation')} (°)<input type="number" id="fR" value="${f.rot}" step="15"></label>
-      <label>${tr('颜色','Color')}<input type="color" id="fC" value="${f.color}"></label>
+      <label class="full">${tr('اسم القطعة','Name')}<input id="fName" value="${esc(nm(f.name))}"></label>
+      <label>${tr('العرض','Width')} (mm)<input type="number" id="fW" value="${f.w}" min="50" step="10"></label>
+      <label>${tr('العمق','Depth')} (mm)<input type="number" id="fD" value="${f.d}" min="50" step="10"></label>
+      <label>${tr('الموضع','Center')} X (mm)<input type="number" id="fX" value="${Math.round(f.cx)}" step="10"></label>
+      <label>${tr('الموضع','Center')} Y (mm)<input type="number" id="fY" value="${Math.round(f.cy)}" step="10"></label>
+      <label>${tr('الزاوية','Rotation')} (°)<input type="number" id="fR" value="${f.rot}" step="15"></label>
+      <label>${tr('اللون','Color')}<input type="color" id="fC" value="${f.color}"></label>
     </div>
-    <div class="muted" style="margin-top:8px">${tr('占地面积','Footprint')} ${fmt(f.w*f.d/1e6)} m²</div>
+    <div class="muted" style="margin-top:8px">${tr('المساحة المشغولة','Footprint')} ${fmt(f.w*f.d/1e6)} م²</div>
     <div class="actions">
-      <button class="btn" id="aRot">${tr('旋转 90°','Rotate 90°')}</button><button class="btn" id="aDup">${tr('نسخ','Duplicate')}</button>
-      <button class="btn" id="aTop">${tr('置于顶层','Bring to front')}</button><button class="btn" id="aBot">${tr('置于底层','Send to back')}</button>
-      <button class="btn danger" id="aDel">${tr('حذف','Delete')}</button><button class="btn" id="back">${tr('← 返回','← Back')}</button>
+      <button class="btn" id="aRot">${tr('تدوير 90°','Rotate 90°')}</button><button class="btn" id="aDup">${tr('نسخ','Duplicate')}</button>
+      <button class="btn" id="aTop">${tr('إلى الأمام','Bring to front')}</button><button class="btn" id="aBot">${tr('إلى الخلف','Send to back')}</button>
+      <button class="btn danger" id="aDel">${tr('حذف','Delete')}</button><button class="btn" id="back">${tr('← عودة','← Back')}</button>
     </div></section>
-  <section class="muted" style="font-size:12px">${tr('拖动家具移动；拖动上方圆点旋转；拖动右下角方块调整尺寸。开启「贴墙吸附」后靠近墙面会自动贴齐。', 'Drag to move; drag the top dot to rotate; drag the bottom-right square to resize. With "Wall snap" on, items snap flush to nearby walls.')}</section>`;
+  <section class="muted" style="font-size:12px">${tr('اسحب القطعة للتحريك، الدائرة العلوية للتدوير، والمربع بالزاوية السفلية لتعديل الأبعاد. تفعيل «محاذاة الجدران» يضمن الالتصاق التلقائي بالجدار.', 'Drag to move; drag the top dot to rotate; drag the bottom-right square to resize. With "Wall snap" on, items snap flush to nearby walls.')}</section>`;
 }
 export function bindFurnPanel(f){
   const upd = (fn) => mutate(() => { const g = getF(f.id); if (g) fn(g); });

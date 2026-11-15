@@ -97,7 +97,7 @@ kbd{font:11px ui-monospace,Menlo,monospace;background:#f2ece2;border:1px solid v
 #toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
   padding:8px 16px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none;z-index:10}
 #toast.show{opacity:1;transform:translateX(-50%)}
-/* ---------- 2D / 3D 切换 ---------- */
+/* ---------- 2D / 3D Switch ---------- */
 .seg{position:relative;padding:3px;direction:ltr;display:inline-flex;align-items:center}
 .seg .btn{position:relative;z-index:1;width:82px;transition:color .45s}
 .seg .btn:hover{background:transparent}
@@ -147,7 +147,7 @@ main.animating #hint3d{opacity:0}
   border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:0 10px 30px rgba(40,30,20,.14);z-index:20;animation:fadeIn .2s ease}
 .menu-pop .btn{text-align:left}
 .range span{font-variant-numeric:tabular-nums;color:var(--ink)}
-/* ---------- 选中后的浮动工具条 ---------- */
+/* ---------- Floating Action Bar ---------- */
 #fab{position:absolute;left:50%;bottom:16px;transform:translate(-50%,12px);display:flex;align-items:center;gap:4px;padding:5px;
   background:rgba(255,253,249,.97);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 26px rgba(40,30,20,.16);
   z-index:4;opacity:0;visibility:hidden;transition:opacity .2s,transform .2s,visibility 0s linear .2s;max-width:calc(100% - 24px)}
@@ -156,13 +156,13 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
 #fab .name{padding:0 8px 0 6px;font-weight:600;max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #fab .btn{border:1px solid transparent}
 #fab .sep{width:1px;align-self:stretch;margin:4px 2px;background:var(--line)}
-/* ---------- 触屏漫游摇杆 ---------- */
+/* ---------- Touch Walk Joystick ---------- */
 #joy{position:absolute;left:28px;bottom:28px;width:130px;height:130px;border-radius:50%;background:rgba(255,253,249,.25);
   border:2px solid rgba(255,255,255,.7);box-shadow:0 4px 18px rgba(0,0,0,.18);z-index:3;display:none;touch-action:none;backdrop-filter:blur(3px)}
 #joy i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,253,249,.92);
   box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none}
 #walkExit{position:absolute;right:16px;bottom:28px;z-index:3;display:none}
-/* ---------- 触屏：加大点击区域 ---------- */
+/* ---------- Touch: Expanded Tap Targets ---------- */
 @media (pointer:coarse){
   body{font-size:14px}
   header{padding:8px 12px;gap:8px}
@@ -181,8 +181,8 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
   .mat{padding:9px 8px}
   .range input{width:120px!important}
 }
-/* ---------- 竖屏 / 窄屏（如 iPad 竖握）：侧栏改为抽屉 ---------- */
-/* ---------- 宽屏：左右面板可收起 ---------- */
+/* ---------- Narrow / Portrait: Drawer Viewport ---------- */
+/* ---------- Desktop: Collapsible Sidebars ---------- */
 @media (min-width:1101px){
   .app{transition:grid-template-columns .3s cubic-bezier(.3,.7,.3,1)}
   .app.hide-lib{grid-template-columns:0 minmax(0,1fr) 300px}
@@ -190,7 +190,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
   .app.hide-lib.hide-panel{grid-template-columns:0 minmax(0,1fr) 0}
   .app.hide-lib aside.lib,.app.hide-panel aside.right{overflow:hidden;border:0}
   aside{overflow-x:hidden}
-  aside.lib>div{min-width:220px} #panel{min-width:284px}   /* 收起动画中内容不被挤压变形 */
+  aside.lib>div{min-width:220px} #panel{min-width:284px}   /* Prevent content distortion during collapse */
 }
 .narrow-only{display:none!important}
 @media (max-width:1100px){

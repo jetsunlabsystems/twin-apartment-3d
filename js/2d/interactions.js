@@ -37,7 +37,7 @@ export function snapRects(){
   return WALLS.filter((w, i) => !state.demolished.includes('w' + i)).concat(WINS);
 }
 
-/* ======================= 操作 ======================= */
+/* ======================= Selection & Manipulation ======================= */
 export function select(sel){
   ui.sel = sel;
   renderSel();
@@ -136,7 +136,7 @@ export function syncModeHint(){
   m.classList.toggle('show', ui.tool !== 'select');
 }
 
-/* ======================= 视图 ======================= */
+/* ======================= View & Canvas Transforms ======================= */
 export function applyView(){
   if (!svg) return;
   const W = svg.clientWidth || window.innerWidth, H = svg.clientHeight || window.innerHeight;
@@ -236,7 +236,7 @@ export function snapPoint(p, orth){
   return pt;
 }
 
-/* ======================= 事件交互 (Pointer / Touch) ======================= */
+/* ======================= Pointer & Touch Interactions ======================= */
 let drag = null, touches = new Map(), pinch = null;
 const pinchInfo = () => {
   const [a, b] = Array.from(touches.values());
@@ -440,7 +440,7 @@ if (svg) {
   });
 }
 
-/* ======================= 键盘快捷键 ======================= */
+/* ======================= Keyboard Shortcuts ======================= */
 document.addEventListener('keydown', e => {
   if (e.target.matches('input,select,textarea')) return;
   if (window.View3D?.walking && window.View3D.walking()) return;

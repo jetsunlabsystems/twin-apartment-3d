@@ -6,7 +6,7 @@ import { MATS } from '../data/materials.js';
 import { state, ui, view, getF, aabb } from './state.js';
 import { renderPanel } from '../ui/panels.js';
 
-/* ======================= SVG 图案定义 ======================= */
+/* ======================= SVG Pattern Definitions ======================= */
 export function buildDefs(){
   const plank = (id, base, line) => `<pattern id="m-${id}" patternUnits="userSpaceOnUse" width="1800" height="360">
       <rect width="1800" height="360" fill="${base}"/>
@@ -36,7 +36,7 @@ export function buildDefs(){
       <path d="M500 0V1000M0 500H1000" stroke="#e5dfd3" stroke-width="8"/><path d="M0 0V1000M0 0H1000" stroke="#d8d0c1" stroke-width="14"/></pattern>`;
 }
 
-/* ======================= 家具图例 ======================= */
+/* ======================= Furniture SVG Symbols ======================= */
 const ST = 'stroke="#3d3a34" stroke-width="1" vector-effect="non-scaling-stroke"';
 const rc = (x,y,w,h,f,ex='') => `<rect x="${x}" y="${y}" width="${Math.max(0,w)}" height="${Math.max(0,h)}" fill="${f}" ${ST} ${ex}/>`;
 const ec = (cx,cy,rx,ry,f,ex='') => `<ellipse cx="${cx}" cy="${cy}" rx="${Math.max(0,rx)}" ry="${Math.max(0,ry)}" fill="${f}" ${ST} ${ex}/>`;
@@ -145,7 +145,7 @@ export function furnSVG(t,w,d,c){
   }
 }
 
-/* ======================= 渲染 ======================= */
+/* ======================= Rendering Passes ======================= */
 const NOLABEL = ['plant','floorlamp','sidetable','barstool','beanbag'];
 export function renderRooms(){
   let s = '';
@@ -282,16 +282,16 @@ export function renderSel(){
   if (ui.sel?.kind === 'furn'){
     const f = getF(ui.sel.id);
     if (f){
-      // 触屏上手柄更大、离家具更远，并各带一圈透明的大热区
+      // Generous touch handles with transparent tap target padding
       const p = 5*k, A = 'stroke="#b5653a" vector-effect="non-scaling-stroke"', hs = COARSE ? 1.7 : 1, ro = (COARSE ? 40 : 26)*k, hit = (COARSE ? 24 : 11)*k;
       const sx = f.w/2+p, sy = f.d/2+p;
       s += `<g transform="translate(${f.cx} ${f.cy}) rotate(${f.rot})">
         <rect x="${-f.w/2-p}" y="${-f.d/2-p}" width="${f.w+2*p}" height="${f.d+2*p}" fill="none" ${A} stroke-width="1.5" stroke-dasharray="5 3" pointer-events="none"/>
         <line x1="0" y1="${-f.d/2-p}" x2="0" y2="${-f.d/2-ro}" ${A} stroke-width="1" pointer-events="none"/>
         <circle data-handle="rot" cx="0" cy="${-f.d/2-ro}" r="${hit}" fill="transparent"/>
-        <circle data-handle="rot" cx="0" cy="${-f.d/2-ro}" r="${6*hs*k}" fill="#fff" ${A} stroke-width="1.5"><title>${tr('拖动旋转（Shift 自由角度）','Drag to rotate (Shift for free angle)')}</title></circle>
+        <circle data-handle="rot" cx="0" cy="${-f.d/2-ro}" r="${6*hs*k}" fill="#fff" ${A} stroke-width="1.5"><title>${tr('اسحب للتدوير (Shift للزوايا الحرة)','Drag to rotate (Shift for free angle)')}</title></circle>
         <circle data-handle="size" cx="${sx}" cy="${sy}" r="${hit}" fill="transparent"/>
-        <rect data-handle="size" x="${sx-5*hs*k}" y="${sy-5*hs*k}" width="${10*hs*k}" height="${10*hs*k}" fill="#b5653a"><title>${tr('拖动调整尺寸','Drag to resize')}</title></rect></g>`;
+        <rect data-handle="size" x="${sx-5*hs*k}" y="${sy-5*hs*k}" width="${10*hs*k}" height="${10*hs*k}" fill="#b5653a"><title>${tr('اسحب لتعديل الحجم','Drag to resize')}</title></rect></g>`;
       const {hh} = aabb(f);
       s += `<text x="${f.cx}" y="${f.cy+hh+24*k}" font-size="${12*k}" text-anchor="middle" fill="#b5653a" font-weight="600" pointer-events="none"
         stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${f.w} × ${f.d}</text>`;

@@ -29,7 +29,7 @@ let archFloor, archUp, furnG, labelG, lampG, selKey = null, selHelper = null;
 let sigArch = '', sigFurn = '', sigLabels = '', grow = 1, furnGrow = 1;
 const keys = {};
 
-/* ======================= 初始化 ======================= */
+/* ======================= Initialization ======================= */
 export function init3D() {
   if (inited) return;
   inited = true;
@@ -208,7 +208,7 @@ export function init3D() {
   bindUI();
 }
 
-/* ======================= 场景同步与构建 ======================= */
+/* ======================= Scene Synchronization & Construction ======================= */
 export function buildFurn() {
   clearGroup(furnG);
   state.furniture.forEach(f => furnG.add(buildFurniture(f)));
@@ -244,7 +244,7 @@ export function buildLabels() {
   const roomList = $('#roomList');
   if (roomList) {
     roomList.innerHTML = counted.map(r => `<button data-room="${r.id}"><span>${esc(nm(state.rooms?.[r.id]?.name || r.name))}</span><small>${area(r.poly).toFixed(2)} m²</small></button>`).join('')
-      + `<button data-room="__all"><span>${tr('全屋', 'Whole home')}</span><small>${counted.reduce((a, r) => a + area(r.poly), 0).toFixed(2)} m²</small></button>`;
+      + `<button data-room="__all"><span>${tr('كامل الشقة', 'Whole home')}</span><small>${counted.reduce((a, r) => a + area(r.poly), 0).toFixed(2)} m²</small></button>`;
     roomList.querySelectorAll('button').forEach(b => {
       b.onclick = () => {
         roomList.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
@@ -300,7 +300,7 @@ export function sync(force) {
   }
 }
 
-/* ======================= 日照与夜景 ======================= */
+/* ======================= Lighting & Daylight System ======================= */
 export function applyLight() {
   const t = (opt.hour - 6) / 12;
   const az = Math.PI * (0.15 + t * 0.7);
@@ -328,7 +328,7 @@ export function applyLight() {
   if (sunT) sunT.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-/* ======================= 相机位姿与动画 ======================= */
+/* ======================= Camera Poses & Easing ======================= */
 const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const clamp01 = t => Math.max(0, Math.min(1, t));
 const pose = (t, p) => ({ t, p });
@@ -408,7 +408,7 @@ function flyToRoom(id) {
   flyTo(isoFrom(new THREE.Vector3(wx(cx), 0, wz(cy)), d));
 }
 
-/* ======================= 2D / 3D 模式切换 ======================= */
+/* ======================= 2D / 3D Mode Switching ======================= */
 export async function enter() {
   if (active || anim) return;
   init3D();
@@ -490,7 +490,7 @@ export async function exit() {
   if (selHelper) selHelper.visible = false;
 }
 
-/* ======================= 射线拾取与交互 ======================= */
+/* ======================= Raycasting & Object Picking ======================= */
 const ray = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -571,7 +571,7 @@ function updateSel() {
   }
 }
 
-/* ======================= 第一人称漫游 ======================= */
+/* ======================= First Person Walk Mode ======================= */
 let touchWalk = false;
 
 function lookBy(dx, dy) {
@@ -707,7 +707,7 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => (keys[e.code] = false));
 
-/* ======================= UI 同步 ======================= */
+/* ======================= UI Synchronization ======================= */
 function syncModeBtns() {
   document.querySelectorAll('#modes3d .btn').forEach(b => b.classList.toggle('on', b.dataset.mode === opt.mode));
 }
@@ -775,7 +775,7 @@ function bindUI() {
   }
 }
 
-/* ======================= 主渲染循环 ======================= */
+/* ======================= Main Render Loop ======================= */
 const clock = new THREE.Clock();
 function startLoop() {
   if (!raf) {

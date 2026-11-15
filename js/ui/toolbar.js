@@ -60,7 +60,7 @@ export function syncModeHint(){
   m.classList.toggle('show', ui.tool !== 'select');
 }
 
-/* ======================= 家具库 ======================= */
+/* ======================= Furniture Library ======================= */
 const itemOf = el => {
   const [ci, ii] = el.dataset.key.split(':').map(Number);
   return LIB[ci].items[ii];
@@ -152,7 +152,7 @@ function endLibDrag(e, ok){
 addEventListener('pointerup', e => endLibDrag(e, true));
 addEventListener('pointercancel', e => endLibDrag(e, false));
 
-/* ======================= 导入导出 ======================= */
+/* ======================= Import & Export ======================= */
 function download(name, blob){
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -187,7 +187,7 @@ function exportPNG(){
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone));
 }
 
-/* ======================= 2D / 3D 切换 ======================= */
+/* ======================= 2D / 3D View Switching ======================= */
 export async function setView(m){
   if (m === viewMode || switching) return;
   if (!window.View3D) return toast(tr('محرك 3D قيد التحميل...', '3D engine is loading...'));
@@ -210,7 +210,7 @@ export async function setView(m){
   document.body.classList.remove('busy');
 }
 
-/* ======================= 工具栏事件绑定 ======================= */
+/* ======================= Toolbar Event Binding ======================= */
 export function initToolbar(){
   document.querySelectorAll('.menu-pop .btn').forEach(b => b.addEventListener('click', () => b.closest('details').open = false));
   document.querySelectorAll('#viewSeg .btn').forEach(b => b.onclick = () => setView(b.dataset.view));

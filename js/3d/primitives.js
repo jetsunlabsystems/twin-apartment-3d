@@ -16,7 +16,7 @@ export function shapeOf(poly, flip){
   return s;
 }
 
-/* ======================= 几何与材质工具 ======================= */
+/* ======================= Geometry & Material Utilities ======================= */
 const matCache = new Map();
 export function mat(color, o = {}){
   const key = color + JSON.stringify(o);
@@ -39,29 +39,29 @@ export function rbox(w, h, d, m, x = 0, y = 0, z = 0, r = .04){
 export function cyl(rt, rb, h, m, x = 0, y = 0, z = 0, seg = 28){
   const o = mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); o.position.set(x, y + h/2, z); return o;
 }
-// 旋转体：pts = [[半径, 高度], …] 自下而上，y = 底面
+// Lathe revolution body: pts = [[radius, height], ...] bottom to top, y = base
 export function lathe(pts, m, x = 0, y = 0, z = 0, seg = 40){
   const o = mesh(new THREE.LatheGeometry(pts.map(([r, h]) => new THREE.Vector2(Math.max(r, 1e-4), h)), seg), m); o.position.set(x, y, z); return o;
 }
-// 两点之间的圆杆，r0 在 a 端、r1 在 b 端（收分椅腿、斜撑）
+// Connecting rod between points a and b, r0 at a, r1 at b (tapered legs, struts)
 export function rod(a, b, r0, m, r1 = r0, seg = 12){
   const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), o = mesh(new THREE.CylinderGeometry(r1, r0, A.distanceTo(B), seg), m);
   o.position.copy(A).add(B).multiplyScalar(.5); o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.sub(A).normalize()); return o;
 }
-// 沿曲线的圆管（水龙头、扶手、灯臂）
+// Swept tube along curve points (faucets, handrails, lamp stems)
 export const tube = (pts, r, m, seg = 40) => mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(...p)), false, 'centripetal'), seg, r, 10), m);
-// 椭球（靠垫、叶片、豆袋），y = 中心
+// Ellipsoid (cushions, leaves, beanbags), y = center
 export function blob(rx, ry, rz, m, x = 0, y = 0, z = 0, seg = 24){
   const o = mesh(new THREE.SphereGeometry(1, seg, Math.round(seg*.7)), m); o.scale.set(rx, ry, rz); o.position.set(x, y, z); return o;
 }
-// 水平圆环，y = 中心
+// Horizontal torus ring, y = center
 export function ring(R, r, m, x = 0, y = 0, z = 0){ const o = mesh(new THREE.TorusGeometry(R, r, 10, 48), m); o.rotation.x = Math.PI/2; o.position.set(x, y, z); return o; }
 export function rrect(w, d, r){
   const s = new THREE.Shape(), x = -w/2, y = -d/2; r = Math.min(r, w/2 - .001, d/2 - .001);
   s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + d - r); s.quadraticCurveTo(x + w, y + d, x + w - r, y + d);
   s.lineTo(x + r, y + d); s.quadraticCurveTo(x, y + d, x, y + d - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s;
 }
-// 中空圆角框（浴缸、水槽沿、椅背框）：外 w×d、壁厚 t、高 h
+// Hollow rounded frame (bathtubs, basins, chair back frames): outer wxd, wall t, height h
 export function shell(w, d, h, t, r, m, x = 0, y = 0, z = 0){
   const s = rrect(w, d, r); s.holes.push(rrect(w - 2*t, d - 2*t, Math.max(.004, r - t)));
   const geo = new THREE.ExtrudeGeometry(s, {depth:h, bevelEnabled:false, curveSegments:10}); geo.rotateX(-Math.PI/2);
@@ -69,7 +69,7 @@ export function shell(w, d, h, t, r, m, x = 0, y = 0, z = 0){
 }
 export const darker = (hex, k = .8) => '#' + new THREE.Color(hex).multiplyScalar(k).getHexString();
 export const lighter = (hex, k = .2) => '#' + new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), k).getHexString();
-// 四条收分腿：inset 为距边距离，r 为腿底半径（顶部略粗）
+// 4 tapered legs: inset from edge, r = foot radius (top slightly thicker)
 export const legs = (g, w, d, h, m, inset = .05, r = .02) => [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a, b]) => g.add(rod([a*(w/2-inset), 0, b*(d/2-inset)], [a*(w/2-inset), h, b*(d/2-inset)], r*.7, m, r)));
 export const metal = () => mat('#cfd2d4', {metalness:.9, roughness:.25});
 export const chrome = () => mat('#eef0f2', {metalness:1, roughness:.08});
@@ -93,7 +93,7 @@ export const glassMat = new THREE.MeshPhysicalMaterial({
   reflectivity: 0.9
 });
 
-// 拉手：y 为拉手中心，z 为门板正面
+// Door handle pull: y is pull center, z is front face of panel
 export function pull(g, len, vert, x, y, z){
   const m = hwMat(), o = new THREE.Group();
   o.add(vert ? box(.01, len, .01, m, 0, -len/2, .028) : box(len, .01, .01, m, 0, -.005, .028));
@@ -101,11 +101,11 @@ export function pull(g, len, vert, x, y, z){
   o.position.set(x, y, z); g.add(o);
 }
 export function knob(g, x, y, z){ const k = cyl(.011, .014, .02, hwMat(), x, y - .01, z + .01, 16); k.rotation.x = Math.PI/2; g.add(k, blob(.014, .014, .008, hwMat(), x, y, z + .022, 12)); }
-// 柜门 / 抽屉面板：x0..x0+w、y0..y0+h 区域内 nx 列 × ny 行，正面朝 +z（z = 柜体正面）
-// hd：'bar' 金属拉手 | 'knob' 圆钮 | 'edge' 顶部隐形拉槽 | 'none'；hy：门拉手中心高度（null = 面板中部）
+// Cabinet door / drawer fronts: inside region x0..x0+w, y0..y0+h, nx cols x ny rows, face toward +z
+// hd: 'bar' metal handle | 'knob' round knob | 'edge' hidden groove | 'none'; hy: handle height
 export function fronts(g, x0, y0, w, h, z, nx, ny, m, hd = 'bar', hy = null){
   const gap = .005, pw = w/nx, ph = h/ny, fz = z + .018;
-  g.add(box(w, h, .002, '#2a2724', x0 + w/2, y0, z + .001));                     // 缝隙里透出的暗色
+  g.add(box(w, h, .002, '#2a2724', x0 + w/2, y0, z + .001));                     // Dark shadow reveal in reveal gaps
   for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){
     const cx = x0 + pw*(i + .5), yb = y0 + ph*j, drawer = ph < .4 && pw >= ph;
     g.add(rbox(pw - gap, ph - gap, .018, m, cx, yb + gap/2, z + .009, .003));
