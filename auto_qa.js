@@ -97,6 +97,20 @@ async function runQA() {
   fs.writeFileSync(path2dStairs, Buffer.from(ss2dStairs.data, 'base64'));
   console.log(`[QA] Saved 2D Stairs Zoom view to: ${path2dStairs}`);
 
+  // 1c. Zoom to Reception Salons in 2D
+  console.log('[QA] Zooming in on Reception Salons in 2D...');
+  await send('Runtime.evaluate', {
+    expression: `(() => {
+      const svg = document.querySelector('#plan');
+      if (svg) svg.setAttribute('viewBox', '0 18000 15800 11000');
+    })()`
+  });
+  await new Promise(r => setTimeout(r, 800));
+  const ss2dRec = await send('Page.captureScreenshot', { format: 'png' });
+  const path2dRec = path.join(ARTIFACT_DIR, 'qa_2d_reception_zoom.png');
+  fs.writeFileSync(path2dRec, Buffer.from(ss2dRec.data, 'base64'));
+  console.log(`[QA] Saved 2D Reception Zoom view to: ${path2dRec}`);
+
   // Reset 2D View
   await send('Runtime.evaluate', {
     expression: `(() => {
@@ -210,6 +224,19 @@ async function runQA() {
   const paths = path.join(ARTIFACT_DIR, 'qa_3d_stairs_zoom.png');
   fs.writeFileSync(paths, Buffer.from(sss.data, 'base64'));
   console.log(`[QA] Saved 3D Stairs view to: ${paths}`);
+
+  // 7c. Focus Camera on Reception Salon in 3D
+  console.log('[QA] Selecting Reception Salon in 3D to fly camera to it...');
+  await send('Runtime.evaluate', {
+    expression: `(() => {
+      window.select({ kind: 'room', id: 'rec_l' });
+    })()`
+  });
+  await new Promise(r => setTimeout(r, 2500));
+  const ssr = await send('Page.captureScreenshot', { format: 'png' });
+  const pathr = path.join(ARTIFACT_DIR, 'qa_3d_reception_zoom.png');
+  fs.writeFileSync(pathr, Buffer.from(ssr.data, 'base64'));
+  console.log(`[QA] Saved 3D Reception view to: ${pathr}`);
 
   // 8. Test Furniture Selection and Full Tajawal Text without Truncation in FAB
   console.log('[QA] Selecting TV Stand (وحدة تلفزيون جدارية فاخرة) to verify FAB and panel text...');
