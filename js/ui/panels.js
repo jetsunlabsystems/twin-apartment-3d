@@ -1,9 +1,11 @@
 // UI Sidebar Panels (Room Properties, Furniture Parameters, Overview Stats)
-import { $, $$, esc, fmt, area, perim, bbox, narrow, PANES_KEY, toast } from '../config.js';
+import { $, $$, COARSE, esc, fmt, norm, area, perim, bbox, narrow, PANES_KEY, toast } from '../config.js';
 import { tr, nm } from '../i18n.js';
 import { ROOMS, WALLS } from '../data/floorplan.js';
 import { MATS } from '../data/materials.js';
 import { state, ui, getF, mutate, snap, commit } from '../2d/state.js';
+import { select, rotateSel, duplicateSel, deleteSel } from '../2d/interactions.js';
+import { is3D } from './toolbar.js';
 
 /* ======================= 右侧面板 ======================= */
 

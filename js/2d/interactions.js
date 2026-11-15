@@ -43,6 +43,7 @@ export function select(sel){
   renderSel();
   renderPanel();
 }
+if (typeof window !== 'undefined') window.select = select;
 
 export function rotateSel(d){
   if (ui.sel?.kind === 'furn') {

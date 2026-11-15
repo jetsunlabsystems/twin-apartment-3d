@@ -45,6 +45,10 @@ window.ui = ui;
 export const view = { x0: 0, y0: 0, s: 0.06 };
 export const undoStack = [];
 export const redoStack = [];
+if (typeof window !== 'undefined') {
+  window.undoStack = undoStack;
+  window.redoStack = redoStack;
+}
 
 export function save() {
   try {
