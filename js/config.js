@@ -19,6 +19,17 @@ export const area = poly => Math.abs(poly.reduce((a, p, i) => {
   return a + p[0] * q[1] - q[0] * p[1];
 }, 0)) / 2 / 1e6;
 
+let toastT;
+export function toast(msg){
+  const t = $('#toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2200);
+}
+if (typeof window !== 'undefined') window.toast = toast;
+
 export { aabb } from './2d/state.js';
 
 export const perim = poly => poly.reduce((a, p, i) => {

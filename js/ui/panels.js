@@ -1,5 +1,5 @@
 // UI Sidebar Panels (Room Properties, Furniture Parameters, Overview Stats)
-import { $, $$, esc, fmt, area, perim, bbox, narrow, PANES_KEY } from '../config.js';
+import { $, $$, esc, fmt, area, perim, bbox, narrow, PANES_KEY, toast } from '../config.js';
 import { tr, nm } from '../i18n.js';
 import { ROOMS, WALLS } from '../data/floorplan.js';
 import { MATS } from '../data/materials.js';
