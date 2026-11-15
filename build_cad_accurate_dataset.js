@@ -65,11 +65,11 @@ const leftRooms = [
     at: [2345, 9240]
   },
 
-  // 5. Family Living Room (معيشة, 5.60m x 3.60m)
+  // 5. Open-Concept Family Living Room (معيشة, 5.60m x 3.60m, open to hall & lightwell)
   {
     id: 'living_l',
     name: 'غرفة المعيشة',
-    poly: [[200, 11360], [5800, 11360], [5800, 14960], [200, 14960]],
+    poly: [[200, 11360], [5840, 11360], [5840, 14960], [200, 14960]],
     mat: 'wood',
     at: [3000, 13160]
   },
@@ -83,13 +83,13 @@ const leftRooms = [
     at: [2345, 16705]
   },
 
-  // 7. Guest Bathroom (حمام ضيوف)
+  // 7. Guest Bathroom (حمام ضيوف, 2.50m WC + 1.67m Vanity Anteroom)
   {
     id: 'gbath_l',
     name: 'حمام ضيوف',
-    poly: [[200, 18450], [4370, 18450], [4370, 19650], [200, 19650]],
+    poly: [[200, 18450], [4490, 18450], [4490, 19650], [200, 19650]],
     mat: 'marble',
-    at: [2285, 19050]
+    at: [2345, 19050]
   },
 
   // 8. Grand Reception (استقبال, 7.71m width with 1.20m stepped facade)
@@ -221,7 +221,7 @@ const leftDoors = [
     len: 750,
     entry: false
   },
-  // 7. Bedroom 1 Door
+  // 7. Bedroom 1 Door (from 1.20m hallway into Bed 1)
   {
     name: 'باب غرفة نوم 1',
     rect: [4490, 7350, 4610, 8200],
@@ -231,7 +231,7 @@ const leftDoors = [
     len: 850,
     entry: false
   },
-  // 8. Kitchen Door
+  // 8. Kitchen Door (from 1.40m gallery hallway into Kitchen bottom-right)
   {
     name: 'باب المطبخ',
     rect: [4490, 17350, 4610, 18200],
@@ -241,21 +241,21 @@ const leftDoors = [
     len: 850,
     entry: false
   },
-  // 9. Guest Bathroom Door
+  // 9. Guest Bathroom Inner Privacy Door (between Vanity Anteroom and WC)
   {
-    name: 'باب حمام الضيوف',
-    rect: [3500, 18330, 4250, 18450],
-    h: [4250, 18450],
-    c: [-1, 0],
-    o: [0, 1],
+    name: 'باب حمام الضيوف الداخلي',
+    rect: [2700, 18550, 2820, 19300],
+    h: [2700, 18550],
+    c: [0, 1],
+    o: [-1, 0],
     len: 750,
     entry: false
   },
-  // 10. Apartment Main Entrance Door
+  // 10. Apartment Main Entrance Door (hinged at South column, swings into private gallery)
   {
     name: 'مدخل الشقة اليسرى',
-    rect: [5920, 17450, 6040, 18450],
-    h: [6040, 18400],
+    rect: [5920, 17500, 6040, 18450],
+    h: [6040, 18450],
     c: [0, -1],
     o: [-1, 0],
     len: 950,
@@ -279,7 +279,6 @@ const DOORS = [...leftDoors, ...rightDoors];
 // ==========================================
 // 3. SLIDING GLASS PATIO DOORS (Terrace Only)
 // ==========================================
-// Only the dedicated corner terraces have sliding glass doors leading out from Reception!
 const SLIDES = [
   { rect: [1200, 26870, 3200, 26970], v: false },
   { rect: [W_ENVELOPE - 3200, 26870, W_ENVELOPE - 1200, 26970], v: false }
@@ -296,7 +295,7 @@ const leftWins = [
   [0, 12300, 200, 14000, 0.45, 2.4],   // Living Room West Exterior
   [0, 15800, 200, 17400, 0.9, 2.4],    // Kitchen West Exterior
   [0, 21500, 200, 24500, 0.45, 2.4],   // Grand Reception West Window
-  [4400, 28020, 7400, 28220, 0.45, 2.4] // Grand Reception South Street-Facing Window (3.80m Facade)
+  [4400, 28000, 7400, 28200, 0.45, 2.4] // Grand Reception South Street Facade (3.80m Window)
 ];
 
 const rightWins = leftWins.map(w => [
@@ -439,24 +438,26 @@ addW(5680, 6140, 5800, 6250);         // Family Bath West wall top
 addW(5680, 7000, 5800, 9540);         // Family Bath West wall bottom
 addW(5800, 9540, 7800, 9660);         // Family Bath South wall
 
-// Bedroom 1 Partitions
+// Bedroom 1 Partitions (Flush West gallery plane at X = 4490..4610)
 addW(4490, 7240, 4610, 7350);         // Bed 1 East wall top jamb
 addW(4490, 8200, 4610, 11240);        // Bed 1 East wall bottom
-addW(200, 11240, 5800, 11360);        // Bed 1 South wall / Living Room North wall
+addW(200, 11240, 4610, 11360);        // Bed 1 South wall / Living Room North wall (ends flush at X = 4610!)
 
-// Living Room Partitions
-addW(200, 14960, 4490, 15080);        // Living Room South wall / Kitchen North wall
+// Living Room: COMPLETELY OPEN ON THE EAST (No wall between X=4610 and X=5840!)
+addW(200, 14960, 4610, 15080);        // Living Room South wall / Kitchen North wall (ends flush at X = 4610!)
 
-// Kitchen Partitions
+// Kitchen Partitions (Flush West gallery plane at X = 4490..4610)
 addW(4490, 15080, 4610, 17350);       // Kitchen East wall top
 addW(4490, 18200, 4610, 18330);       // Kitchen East wall bottom jamb
-addW(200, 18330, 4490, 18450);        // Kitchen South wall / Guest Bath North wall
+addW(200, 18330, 4610, 18450);        // Kitchen South wall / Guest Bath North wall
 
 // Guest Bathroom Partitions
-addW(4370, 18450, 4490, 19650);       // Guest Bath East wall
-addW(200, 19650, 3500, 19770);        // Guest Bath South wall
-addW(4250, 19650, 4490, 19770);       // Guest Bath South wall jamb
-addW(4490, 19650, 7800, 19770);       // Reception North wall
+addW(2700, 18450, 2820, 18550);       // Divider wall top jamb (WC vs. Vanity Anteroom)
+addW(2700, 19300, 2820, 19650);       // Divider wall bottom jamb
+addW(4490, 18450, 4610, 18600);       // Guest Bath East wall top
+addW(4490, 19500, 4610, 19650);       // Guest Bath East wall bottom (open 900mm threshold to vanity!)
+addW(200, 19650, 4610, 19770);        // Guest Bath South wall
+addW(4610, 19650, 7800, 19770);       // Reception North wall
 
 // Reception South Facade & Terrace Divider Walls
 addW(200, 26920, 1200, 27040, 'e');   // Terrace Door left jamb
@@ -468,7 +469,7 @@ addW(3990, 28000, 4400, 28120, 'e');  // Left jamb of 3.80m window
 addW(7400, 28000, 7800, 28120, 'e');  // Right jamb of 3.80m window
 
 // Entrance Lobby Partitions
-addW(5920, 17300, 6040, 17450);       // Lobby Left wall top
+addW(5920, 17300, 6040, 17500);       // Lobby Left wall top
 addW(5920, 18450, 6040, 18600);       // Lobby Left wall bottom
 
 // Central Core Structural Walls
@@ -499,7 +500,6 @@ leftPartitions.forEach(w => {
 });
 
 // Dedicated Terrace Low Railings & Balustrades ('low')
-// Strictly enclosing the 3.79m x 2.00m corner boxes!
 addW(200, 26920, 200, 28920, 'low');   // Left Terrace West Railing (2.00m)
 addW(200, 28920, 3990, 28920, 'low');  // Left Terrace South Railing (3.79m)
 addW(3990, 28120, 3990, 28920, 'low'); // Left Terrace East Railing Return (0.80m)
@@ -589,7 +589,7 @@ addTwin('nightstand', 'كومودينو أيمن', 3500, 7490, 450, 400, 0, '#e8
 addTwin('wardrobe', 'دولاب ملابس', 2345, 10900, 1800, 600, 180, '#efe6d8');
 addTwin('desk', 'مكتب دراسة', 4100, 9800, 1200, 600, 90, '#e2cfb4');
 
-// 7. FAMILY LIVING ROOM (معيشة, 5.60m x 3.60m)
+// 7. OPEN FAMILY LIVING ROOM (معيشة, 5.60m x 3.60m)
 addTwin('sofa', 'كنبة معيشة عائلية L-Shape', 2000, 13160, 2800, 1000, 0, '#7c93a8');
 addTwin('tvstand', 'طاولة تلفزيون معيشة', 2000, 14660, 1800, 400, 180, '#d1c4b2');
 addTwin('rug', 'سجادة غرفة المعيشة', 2000, 13160, 2400, 1800, 0, '#e5ded5');
@@ -599,9 +599,9 @@ addTwin('counter', 'كاونتر مطبخ رئيسي رخام', 2345, 15380, 240
 addTwin('stove', 'بوتاجاز مسطح', 3800, 15380, 750, 450, 0, '#2b2824');
 addTwin('fridge', 'ثلاجة دولابي', 800, 17900, 910, 700, 270, '#c8cbd0');
 
-// 9. GUEST BATH
-addTwin('vanity', 'مغسلة ضيوف رخام', 3800, 19050, 900, 450, 0, '#ffffff');
-addTwin('toilet', 'مرحاض ضيوف', 1000, 19050, 400, 680, 270, '#ffffff');
+// 9. GUEST BATH (2.50m WC + 1.67m Vanity Anteroom)
+addTwin('vanity', 'مغسلة ضيوف ديكور رخام', 3800, 19050, 900, 520, 0, '#ffffff');
+addTwin('toilet', 'مرحاض ضيوف معلق', 1450, 19050, 400, 680, 270, '#ffffff');
 
 // 10. GRAND RECEPTION (7.71m x 7.15m)
 addTwin('sofa', 'كنبة استقبال فاخرة 3 مقاعد', 700, 23345, 2400, 900, 270, '#b7c4b0');
