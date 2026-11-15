@@ -116,7 +116,7 @@ export function init3D() {
     if (typeof window.closeDrawers === 'function') window.closeDrawers();
     if (touchWalk && !look) {
       look = { id: e.pointerId, x: e.clientX, y: e.clientY };
-      cv.setPointerCapture(e.pointerId);
+      try { cv.setPointerCapture(e.pointerId); } catch(err) {}
     }
   });
 
@@ -142,7 +142,7 @@ export function init3D() {
     fdrag = { id: f.id, pid: e.pointerId, sx: e.clientX, sy: e.clientY, ox: g.x - f.cx, oy: g.y - f.cy, before: snap(), moved: false };
     orbit.enabled = false;
     fly = null;
-    cv.setPointerCapture(e.pointerId);
+    try { cv.setPointerCapture(e.pointerId); } catch(err) {}
   }, true);
 
   cv.addEventListener('pointermove', e => {
@@ -556,7 +556,7 @@ function bindJoystick() {
 
   stick.addEventListener('pointerdown', e => {
     pid = e.pointerId;
-    stick.setPointerCapture(pid);
+    try { stick.setPointerCapture(pid); } catch(err) {}
     const rect = stick.getBoundingClientRect();
     sx = rect.left + rect.width / 2;
     sy = rect.top + rect.height / 2;

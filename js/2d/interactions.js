@@ -143,7 +143,8 @@ export function applyView(){
   svg.setAttribute('viewBox', `${view.x0} ${view.y0} ${W / view.s} ${H / view.s}`);
   renderSel();
   if (ui.mA) renderMeasure();
-  $('#scale').textContent = Math.round(view.s * 100) + '%';
+  const sc = $('#scale');
+  if (sc) sc.textContent = Math.round(view.s * 100) + '%';
 }
 
 export function fitView(){
@@ -285,7 +286,7 @@ if (svg) {
 
     if (e.pointerType !== 'mouse'){
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      svg.setPointerCapture(e.pointerId);
+      try { svg.setPointerCapture(e.pointerId); } catch(err) {}
       if (touches.size >= 2){
         endDrag(drag?.kind === 'measure' || drag?.kind === 'pan');
         const { d, c } = pinchInfo();
@@ -301,7 +302,7 @@ if (svg) {
         ui.mA = q;
         ui.mCur = q;
         drag = { kind: 'measure', sx: e.clientX, sy: e.clientY, moved: false };
-        svg.setPointerCapture(e.pointerId);
+        try { svg.setPointerCapture(e.pointerId); } catch(err) {}
       } else {
         const a = ui.mA;
         ui.mA = null;
@@ -328,7 +329,7 @@ if (svg) {
       const room = t.closest('[data-room]');
       drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, x0: view.x0, y0: view.y0, room: room && room.dataset.room, moved: false };
     }
-    svg.setPointerCapture(e.pointerId);
+    try { svg.setPointerCapture(e.pointerId); } catch(err) {}
   });
 
   svg.addEventListener('pointermove', e => {

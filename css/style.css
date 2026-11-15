@@ -111,11 +111,11 @@ body.m3d .only2d,body:not(.m3d) .only3d{display:none!important}
 .only2d,.only3d{animation:fadeIn .45s ease both}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 #plan{transition:opacity .45s ease,transform .45s ease}
-main.is3d #plan{opacity:0;pointer-events:none}
+body.m3d #plan,main.is3d #plan{opacity:0;pointer-events:none}
 .scalebar{transition:opacity .3s}
-main.is3d .scalebar{opacity:0}
+body.m3d .scalebar,main.is3d .scalebar{opacity:0}
 #view3d{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .45s ease,visibility 0s linear .45s}
-main.is3d #view3d{opacity:1;visibility:visible;transition:opacity .45s ease}
+body.m3d #view3d,main.is3d #view3d{opacity:1;visibility:visible;transition:opacity .45s ease}
 #view3d canvas{display:block;outline:none}
 #walkOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(30,28,25,.35);z-index:3;cursor:pointer}
 #walkOverlay>div{background:var(--panel);border-radius:14px;padding:22px 28px;text-align:center;max-width:360px}

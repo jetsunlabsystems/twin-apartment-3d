@@ -194,13 +194,13 @@ export async function setView(m){
   switching = true;
   document.body.classList.add('busy');
   viewMode = m;
+  document.body.classList.toggle('m3d', m === '3d');
+  $('main')?.classList.toggle('is3d', m === '3d');
   if (m === '3d'){
     if (ui.tool !== 'select') setTool('select');
     ui.mA = null;
-    document.body.classList.add('m3d');
     await window.View3D.enter();
   } else {
-    document.body.classList.remove('m3d');
     await window.View3D.exit();
     applyView();
   }

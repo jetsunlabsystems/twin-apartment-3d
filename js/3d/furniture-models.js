@@ -3,9 +3,10 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { rng } from '../config.js';
 import {
-  wx, wz, M, box, rbox, cyl, lathe, rod, tube, blob, ring, shell,
+  wx, wz, M, box, rbox, cyl, lathe, rod, tube, blob, ring, shell, rot,
   darker, lighter, legs, metal, chrome, hwMat, blackMetal, mirror, ceramic,
-  fabric, woodM, screenMat, glowMat, pull, knob, mat
+  fabric, woodM, screenMat, glowMat, pull, knob, mat, fronts, vase, tableLamp, plate,
+  sh, asMat, mesh, rrect, frameMat, glassMat
 } from './primitives.js';
 
 /* ======================= 家具模型（局部坐标：背面朝 -z） ======================= */

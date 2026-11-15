@@ -4,6 +4,7 @@ import { tr, nm } from '../i18n.js';
 import { BOUNDS, WALLS, WINS, DOORS, SLIDES, ROOMS } from '../data/floorplan.js';
 import { MATS } from '../data/materials.js';
 import { state, ui, view, getF } from './state.js';
+import { renderPanel } from '../ui/panels.js';
 
 /* ======================= SVG 图案定义 ======================= */
 export function buildDefs(){

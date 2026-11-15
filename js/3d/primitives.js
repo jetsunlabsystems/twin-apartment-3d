@@ -81,6 +81,17 @@ export const fabric = c => mat(c, {roughness:.96});
 export const woodM = c => mat(c, {roughness:.55});
 export const screenMat = (glow = '#1a2636') => mat('#0b0e13', {roughness:.1, metalness:.3, emissive:glow, emissiveIntensity:.35});
 export const glowMat = (c = '#fff4dc', e = '#ffdca0', k = .5) => mat(c, {emissive:e, emissiveIntensity:k, roughness:.9, side:THREE.DoubleSide});
+export const frameMat = mat('#1c1f24', { roughness: 0.35, metalness: 0.55 });
+export const glassMat = new THREE.MeshPhysicalMaterial({
+  color: 0xd4ecf7,
+  roughness: 0.04,
+  transmission: 0.92,
+  thickness: 0.015,
+  ior: 1.52,
+  transparent: true,
+  opacity: 0.35,
+  reflectivity: 0.9
+});
 
 // 拉手：y 为拉手中心，z 为门板正面
 export function pull(g, len, vert, x, y, z){
@@ -92,7 +103,7 @@ export function pull(g, len, vert, x, y, z){
 export function knob(g, x, y, z){ const k = cyl(.011, .014, .02, hwMat(), x, y - .01, z + .01, 16); k.rotation.x = Math.PI/2; g.add(k, blob(.014, .014, .008, hwMat(), x, y, z + .022, 12)); }
 // 柜门 / 抽屉面板：x0..x0+w、y0..y0+h 区域内 nx 列 × ny 行，正面朝 +z（z = 柜体正面）
 // hd：'bar' 金属拉手 | 'knob' 圆钮 | 'edge' 顶部隐形拉槽 | 'none'；hy：门拉手中心高度（null = 面板中部）
-function fronts(g, x0, y0, w, h, z, nx, ny, m, hd = 'bar', hy = null){
+export function fronts(g, x0, y0, w, h, z, nx, ny, m, hd = 'bar', hy = null){
   const gap = .005, pw = w/nx, ph = h/ny, fz = z + .018;
   g.add(box(w, h, .002, '#2a2724', x0 + w/2, y0, z + .001));                     // 缝隙里透出的暗色
   for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){
@@ -107,7 +118,7 @@ function fronts(g, x0, y0, w, h, z, nx, ny, m, hd = 'bar', hy = null){
   }
 }
 const vasePts = (r, h) => [[0, 0], [r*.65, 0], [r, h*.32], [r*.92, h*.62], [r*.42, h*.86], [r*.5, h]];
-function vase(g, x, y, z, r, h, c, R, flowers = true){
+export function vase(g, x, y, z, r, h, c, R, flowers = true){
   g.add(lathe(vasePts(r, h), mat(c, {roughness:.35, side:THREE.DoubleSide}), x, y, z, 32));
   if (!flowers) return;
   const cols = ['#f3e6d8', '#e8b4a0', '#f6d27a', '#ffffff'];
@@ -116,10 +127,10 @@ function vase(g, x, y, z, r, h, c, R, flowers = true){
     g.add(rod([x, y + h*.6, z], top, .003, '#6f8f4a', .003, 6), blob(.022, .018, .022, cols[k % 4], ...top, 12));
   }
 }
-function tableLamp(g, x, y, z, s = 1){
+export function tableLamp(g, x, y, z, s = 1){
   g.add(lathe([[0, 0], [.06*s, 0], [.075*s, .05*s], [.08*s, .12*s], [.055*s, .2*s], [.018*s, .25*s], [.012*s, .3*s]], ceramic({roughness:.3}), x, y, z, 32));
   g.add(lathe([[.13*s, 0], [.1*s, .18*s]], glowMat('#f6ecd9', '#ffdca0', .35), x, y + .26*s, z, 40), blob(.03*s, .03*s, .03*s, glowMat('#fff', '#ffe2b0', 1), x, y + .31*s, z, 12));
 }
-const plate = (g, r, x, y, z) => g.add(lathe([[0, 0], [r*.6, 0], [r*.72, .008], [r, .02]], ceramic({side:THREE.DoubleSide}), x, y, z, 32));
+export const plate = (g, r, x, y, z) => g.add(lathe([[0, 0], [r*.6, 0], [r*.72, .008], [r, .02]], ceramic({side:THREE.DoubleSide}), x, y, z, 32));
 
 
