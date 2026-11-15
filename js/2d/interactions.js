@@ -6,6 +6,7 @@ import { BOUNDS, WALLS, WINS, ROOMS } from '../data/floorplan.js';
 import { state, ui, view, getF, aabb, mutate, snap, commit, undo, redo } from './state.js';
 import { renderAll, renderSel, renderMeasure, renderFurn } from './renderer.js';
 import { renderPanel, renderFab, drawer, closeDrawers } from '../ui/panels.js';
+import { findBestPlacement } from './smart-placement.js';
 
 const svg = $('#plan') || $('#svg');
 
@@ -95,9 +96,12 @@ export function pushOut(f){
   }
 }
 
-export function addItem(it, x, y){
+export function addItem(it, x, y, preferredRoomId = null){
   const [type, name, w, d, color] = it;
-  const f = F(type, name, Math.round(x / 10) * 10, Math.round(y / 10) * 10, w, d, 0, color);
+  const targetPt = (x !== undefined && y !== undefined && !isNaN(x) && !isNaN(y)) ? { x, y } : null;
+  const roomHint = preferredRoomId || (ui.sel?.kind === 'room' ? ui.sel.id : null);
+  const place = findBestPlacement(it, targetPt, roomHint, state.furniture);
+  const f = F(type, name, place.cx, place.cy, w, d, place.rot, color);
   pushOut(f);
   ui.sel = { kind: 'furn', id: f.id };
   mutate(() => (type === 'rug' ? state.furniture.unshift(f) : state.furniture.push(f)));

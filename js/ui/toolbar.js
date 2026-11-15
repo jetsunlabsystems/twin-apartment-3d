@@ -134,19 +134,16 @@ function endLibDrag(e, ok){
   }
   if (!ok) return;
   let p = null;
+  let roomId = null;
   if (ui.sel?.kind === 'room'){
-    const room = ROOMS.find(r => r.id === ui.sel.id);
-    if (room) {
-      const b = bbox(room.poly);
-      p = { x: (b[0] + b[2]) / 2, y: (b[1] + b[3]) / 2 };
-    }
+    roomId = ui.sel.id;
   } else if (is3D() && window.View3D?.groundAt){
     const r = $('#stage').getBoundingClientRect();
     p = window.View3D.groundAt(r.left + r.width / 2, r.top + r.height / 2);
   }
   const svgEl = $('#svg');
-  if (!p && svgEl) p = { x: view.x0 + svgEl.clientWidth / 2 / view.s, y: view.y0 + svgEl.clientHeight / 2 / view.s };
-  if (p) addItem(d.it, p.x, p.y);
+  if (!p && !roomId && svgEl) p = { x: view.x0 + svgEl.clientWidth / 2 / view.s, y: view.y0 + svgEl.clientHeight / 2 / view.s };
+  addItem(d.it, p?.x, p?.y, roomId);
   closeDrawers();
 }
 addEventListener('pointerup', e => endLibDrag(e, true));

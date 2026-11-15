@@ -13,7 +13,7 @@ export function renderPanel(){
   renderFab();
   const p = $('#panel');
   if (ui.sel?.kind === 'furn'){ const f = getF(ui.sel.id); if (f){ p.innerHTML = furnPanel(f); bindFurnPanel(f); return; } }
-  if (ui.sel?.kind === 'room'){ p.innerHTML = roomPanel(ROOMS.find(r => r.id === ui.sel.id)); bindRoomPanel(); return; }
+  if (ui.sel?.kind === 'room'){ const r = ROOMS.find(r => r.id === ui.sel.id); if (r){ p.innerHTML = roomPanel(r); bindRoomPanel(); return; } }
   p.innerHTML = overviewPanel(); bindOverview();
 }
 
