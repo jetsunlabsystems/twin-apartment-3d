@@ -234,8 +234,8 @@ export function buildLabels() {
       flyToRoom(r.id);
     };
     const o = new CSS2DObject(el);
-    // Sit cleanly on the room floor (y = 0.05m), never floating in the void
-    o.position.set(wx(r.at[0]), 0.05, wz(r.at[1]));
+    // Sit slightly above floor/furniture (y = 0.85m), floating cleanly matching reference render
+    o.position.set(wx(r.at[0]), 0.85, wz(r.at[1]));
     o.visible = labelG.visible && opt.labels;
     labelG.add(o);
   });
@@ -310,17 +310,35 @@ export function applyLight() {
   sun.position.set(Math.cos(az) * 22, Math.sin(el) * 24 + 4, -Math.sin(az) * 14 + 10);
   sun.target.position.set(0, 0, 0);
   sun.color.setHSL(0.09, 0.5 + warm * 0.4, 0.92 - warm * 0.12);
-  sun.intensity = opt.night ? 0.05 : 1.4 + Math.sin(Math.PI * t) * 1.6;
-  hemi.intensity = opt.night ? 0.12 : 1.15;
-  scene.background = new THREE.Color(opt.night ? 0x1c2130 : 0xf7f4ee);
-  ground.material.color.set(opt.night ? 0x2a2e38 : 0xf2eee7);
+
+  if (opt.night) {
+    // Pure pitch-black night environment matching the reference render
+    sun.intensity = 0;
+    hemi.intensity = 0.04;
+    hemi.color.set(0x1e293b);
+    hemi.groundColor.set(0x000000);
+    scene.background = new THREE.Color(0x000000);
+    ground.visible = false;
+  } else {
+    // Crisp architectural daylight
+    sun.intensity = 1.4 + Math.sin(Math.PI * t) * 1.6;
+    hemi.intensity = 1.15;
+    hemi.color.set(0xfff8ee);
+    hemi.groundColor.set(0xb9a88f);
+    scene.background = new THREE.Color(0xf7f4ee);
+    ground.visible = true;
+    ground.material.color.set(0xf2eee7);
+  }
 
   lampG.children.forEach(o => {
-    if (o.isPointLight) o.intensity = opt.night ? 6 : 0;
-    else if (o.material) o.material.emissiveIntensity = opt.night ? 2 : 0.35;
+    if (o.isPointLight) {
+      o.intensity = opt.night ? (o.userData?.nightIntensity || 18) : 0;
+    } else if (o.material) {
+      o.material.emissiveIntensity = opt.night ? 4.5 : 0.35;
+    }
   });
 
-  renderer.toneMappingExposure = opt.night ? 1.25 : 1.05;
+  renderer.toneMappingExposure = opt.night ? 1.35 : 1.05;
 
   const h = Math.floor(opt.hour);
   const m = Math.round((opt.hour - h) * 60);

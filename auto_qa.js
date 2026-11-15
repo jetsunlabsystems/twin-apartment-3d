@@ -291,6 +291,30 @@ async function runQA() {
   fs.writeFileSync(pathf, Buffer.from(ssf.data, 'base64'));
   console.log(`[QA] Saved Furniture FAB view to: ${pathf}`);
 
+  // 9. Test Night Mode Toggle & Capture Night Scene
+  console.log('[QA] Toggling Night Mode in 3D...');
+  const resNight = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const nightBtn = document.querySelector('button[data-t="night"]');
+      if (nightBtn) {
+        nightBtn.click();
+        return {
+          clicked: true,
+          nightActive: window.View3D?.opt?.night
+        };
+      }
+      return { error: 'Night button not found' };
+    })()`,
+    returnByValue: true
+  });
+  console.log('[QA] Night Mode Toggle Result:', resNight.result.value);
+
+  await new Promise(r => setTimeout(r, 2000));
+  const ssn = await send('Page.captureScreenshot', { format: 'png' });
+  const pathn = path.join(ARTIFACT_DIR, 'qa_3d_night_mode.png');
+  fs.writeFileSync(pathn, Buffer.from(ssn.data, 'base64'));
+  console.log(`[QA] Saved 3D Night Mode view to: ${pathn}`);
+
   // Clean up
   try { await fetch(`http://127.0.0.1:${PORT}/json/close/${tab.id}`); } catch(e) {}
   ws.close();

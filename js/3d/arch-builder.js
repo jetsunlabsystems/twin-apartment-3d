@@ -20,7 +20,7 @@ export const clearGroup = g => {
  * Architectural PBR Materials
  * ============================================================ */
 export const wallMat = mat('#f6f4ee', { roughness: 0.92 });
-export const capMat = mat('#282624', { roughness: 0.85 });          // Dark charcoal CAD cut-plane cap
+export const capMat = mat('#080808', { roughness: 0.98 });          // Jet black CAD cut-plane cap matching reference
 export const frameMat = mat('#1c1f24', { roughness: 0.35, metalness: 0.55 }); // Obsidian black aluminum
 export const sillMat = mat('#e2ded6', { roughness: 0.28 });          // Polished stone window sill ledge
 export const skirtMat = mat('#3c342c', { roughness: 0.55 });         // Architectural baseboard plinth
@@ -176,19 +176,43 @@ export function buildArch(ctx) {
     ceil.visible = top >= H;
     archUp.add(ceil);
 
-    // Ceiling recessed downlight
+    // Ceiling recessed downlight and warm interior night illumination
     if (r.at && lampG) {
       const lamp = new THREE.Mesh(
         new THREE.CylinderGeometry(0.20, 0.20, 0.02, 24),
-        new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#fff4e0', emissiveIntensity: 0.35 })
+        new THREE.MeshStandardMaterial({
+          color: '#ffffff',
+          emissive: '#ffe3be',
+          emissiveIntensity: opt?.night ? 4.5 : 0.35
+        })
       );
       lamp.position.set(wx(r.at[0]), H - 0.012, wz(r.at[1]));
       lamp.visible = top >= H;
       lampG.add(lamp);
 
-      const pl = new THREE.PointLight(0xffdfb8, 0, 7.5, 1.6);
-      pl.position.set(wx(r.at[0]), H - 0.25, wz(r.at[1]));
+      // Place light INSIDE room cavity below cut wall height (e.g. 1.85m)
+      // so it illuminates the inner walls and floor with warm gradient falloff matching reference
+      const lightY = Math.max(1.1, Math.min(top - 0.35, 1.95));
+      const roomA = Math.abs(r.poly.reduce((a, [x, y], i, arr) => {
+        const [nx, ny] = arr[(i + 1) % arr.length];
+        return a + (x * ny - nx * y);
+      }, 0) / 2) / 1000000;
+      const dist = Math.max(8.5, Math.min(16.0, Math.sqrt(roomA) * 2.8));
+
+      const pl = new THREE.PointLight(0xffdfba, opt?.night ? 18 : 0, dist, 1.45);
+      pl.position.set(wx(r.at[0]), lightY, wz(r.at[1]));
+      pl.userData = { nightIntensity: 18 };
       lampG.add(pl);
+
+      // Large reception salon: add second auxiliary light to ensure uniform illumination across dining/foyer
+      if (r.id === 'rec_l' || r.id === 'rec_r') {
+        const auxX = r.id === 'rec_l' ? 6200 : 9600;
+        const auxY = 20800;
+        const pl2 = new THREE.PointLight(0xffdfba, opt?.night ? 16 : 0, dist, 1.45);
+        pl2.position.set(wx(auxX), lightY, wz(auxY));
+        pl2.userData = { nightIntensity: 16 };
+        lampG.add(pl2);
+      }
     }
   });
 
