@@ -1,0 +1,118 @@
+// 2D & Shared Application State, History (Undo/Redo), and Persistence
+import { STORE, norm } from '../config.js';
+import { ROOMS } from '../data/floorplan.js';
+import { defaultFurniture } from '../data/default-furniture.js';
+
+export function defaultState() {
+  const rooms = {};
+  ROOMS.forEach(r => (rooms[r.id] = { name: r.name, mat: r.mat }));
+  return {
+    furniture: defaultFurniture(),
+    rooms,
+    demolished: [],
+    measures: []
+  };
+}
+
+export function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE));
+    if (s && Array.isArray(s.furniture)) return fixState(s);
+  } catch (e) {}
+  return null;
+}
+
+export function fixState(s) {
+  const d = defaultState();
+  s.rooms = Object.assign(d.rooms, s.rooms || {});
+  s.demolished = s.demolished || [];
+  s.measures = s.measures || [];
+  return s;
+}
+
+export const state = load() || defaultState();
+window.state = state;
+
+export const ui = {
+  tool: 'select',
+  sel: null,
+  mA: null,
+  mCur: null,
+  layers: { dims: true, labels: true, furn: true, grid: false, bearing: false, wallSnap: true }
+};
+window.ui = ui;
+
+export const view = { x0: 0, y0: 0, s: 0.06 };
+export const undoStack = [];
+export const redoStack = [];
+
+export function save() {
+  try {
+    localStorage.setItem(STORE, JSON.stringify(state));
+  } catch (e) {}
+}
+
+export function snap() {
+  return JSON.stringify({ furniture: state.furniture, demolished: state.demolished, measures: state.measures });
+}
+
+let syncCallbacks = [];
+export function onStateChange(cb) {
+  syncCallbacks.push(cb);
+}
+
+export function notifyChange() {
+  save();
+  syncCallbacks.forEach(cb => cb());
+}
+
+export function commit(before) {
+  const after = snap();
+  if (before === after) return;
+  undoStack.push(before);
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack.length = 0;
+  notifyChange();
+}
+
+export function mutate(fn) {
+  const b = snap();
+  fn();
+  commit(b);
+}
+
+export function undo() {
+  if (!undoStack.length) return false;
+  redoStack.push(snap());
+  const b = JSON.parse(undoStack.pop());
+  Object.assign(state, b);
+  validateSel();
+  notifyChange();
+  return true;
+}
+
+export function redo() {
+  if (!redoStack.length) return false;
+  undoStack.push(snap());
+  const b = JSON.parse(redoStack.pop());
+  Object.assign(state, b);
+  validateSel();
+  notifyChange();
+  return true;
+}
+
+export function validateSel() {
+  if (ui.sel?.kind === 'furn' && !getF(ui.sel.id)) ui.sel = null;
+  if (ui.sel?.kind === 'room' && !ROOMS.some(r => r.id === ui.sel.id)) ui.sel = null;
+}
+
+export function getF(id) {
+  return state.furniture.find(f => f.id === id);
+}
+
+export function aabb(f) {
+  const rad = (norm(f.rot || 0) * Math.PI) / 180;
+  const c = Math.abs(Math.cos(rad)), s = Math.abs(Math.sin(rad));
+  const hw = (f.w * c + f.d * s) / 2, hd = (f.w * s + f.d * c) / 2;
+  return [f.cx - hw, f.cy - hd, f.cx + hw, f.cy + hd];
+}
