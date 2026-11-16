@@ -4,7 +4,7 @@ import { tr, nm } from '../i18n.js';
 import { LIB } from '../data/furniture-lib.js';
 import { BOUNDS, WALLS, WINS, ROOMS } from '../data/floorplan.js';
 import { state, ui, view, getF, aabb, mutate, snap, commit, undo, redo } from './state.js';
-import { renderAll, renderSel, renderMeasure, renderFurn } from './renderer.js';
+import { renderAll, renderSel, renderMeasure, renderFurn, renderSockets } from './renderer.js';
 import { renderPanel, renderFab, drawer, closeDrawers } from '../ui/panels.js';
 import { findBestPlacement } from './smart-placement.js';
 
@@ -61,6 +61,12 @@ export function deleteSel(){
     ui.sel = null;
     mutate(() => {
       state.furniture = state.furniture.filter(f => f.id !== id);
+    });
+  } else if (ui.sel?.kind === 'socket'){
+    const id = ui.sel.id;
+    ui.sel = null;
+    mutate(() => {
+      state.sockets = (state.sockets || []).filter(s => s.id !== id);
     });
   }
 }
@@ -324,6 +330,13 @@ if (svg) {
     } else if (ui.tool === 'demolish' && t.closest('[data-wall]')){
       toggleWall(t.closest('[data-wall]').dataset.wall);
       return;
+    } else if (t.closest('[data-skid]')){
+      const skid = t.closest('[data-skid]').dataset.skid;
+      const sk = state.sockets?.find(s => s.id === skid);
+      if (sk) {
+        select({ kind: 'socket', id: skid });
+        drag = { kind: 'socket_move', id: skid, sx: e.clientX, sy: e.clientY, ox: p.x - sk.x, oy: p.y - sk.y, before: snap(), moved: false };
+      }
     } else if (ui.tool === 'select' && t.closest('[data-fid]')){
       const f = getF(t.closest('[data-fid]').dataset.fid);
       if (f) {
@@ -381,6 +394,18 @@ if (svg) {
       view.x0 = drag.x0 - (e.clientX - drag.sx) / view.s;
       view.y0 = drag.y0 - (e.clientY - drag.sy) / view.s;
       applyView();
+      return;
+    }
+
+    if (drag.kind === 'socket_move') {
+      const sk = state.sockets?.find(s => s.id === drag.id);
+      if (sk && (drag.moved || far)) {
+        drag.moved = true;
+        sk.x = Math.round(p.x - drag.ox);
+        sk.y = Math.round(p.y - drag.oy);
+        renderSockets();
+        renderSel();
+      }
       return;
     }
 

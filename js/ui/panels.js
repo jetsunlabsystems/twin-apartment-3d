@@ -3,6 +3,8 @@ import { $, $$, COARSE, esc, fmt, norm, area, perim, bbox, narrow, PANES_KEY, to
 import { tr, nm } from '../i18n.js';
 import { ROOMS, WALLS } from '../data/floorplan.js';
 import { MATS, WALL_PAINTS } from '../data/materials.js';
+import { SOCKET_TYPES, SOCKET_HEIGHTS, calculateSocketSchedule, autoGenerateSockets } from '../data/electrical.js';
+import { openElectricalPrintSheet } from './electrical-print.js';
 import { state, ui, getF, mutate, snap, commit } from '../2d/state.js';
 import { select, rotateSel, duplicateSel, deleteSel } from '../2d/interactions.js';
 import { is3D } from './toolbar.js';
@@ -12,8 +14,13 @@ import { is3D } from './toolbar.js';
 export function renderPanel(){
   renderFab();
   const p = $('#panel');
+  if (ui.sel?.kind === 'socket'){
+    const sk = state.sockets?.find(s => s.id === ui.sel.id);
+    if (sk){ p.innerHTML = socketPanel(sk); bindSocketPanel(sk); return; }
+  }
   if (ui.sel?.kind === 'furn'){ const f = getF(ui.sel.id); if (f){ p.innerHTML = furnPanel(f); bindFurnPanel(f); return; } }
   if (ui.sel?.kind === 'room'){ const r = ROOMS.find(r => r.id === ui.sel.id); if (r){ p.innerHTML = roomPanel(r); bindRoomPanel(); return; } }
+  if (ui.viewMode === 'elec'){ p.innerHTML = electricalOverviewPanel(); bindElectricalOverview(); return; }
   p.innerHTML = overviewPanel(); bindOverview();
 }
 
@@ -97,8 +104,30 @@ export function bindOverview(){
 
 // Floating Action Bar (Touch / Mobile Quick Actions: Rotate, Duplicate, Delete, Floor Properties)
 export function renderFab(){
-  const fab = $('#fab'), f = ui.sel?.kind === 'furn' && getF(ui.sel.id), r = ui.sel?.kind === 'room' && ROOMS.find(r => r.id === ui.sel.id);
-  if (!f && !r){ fab.classList.remove('show'); return; }
+  const fab = $('#fab');
+  const sk = ui.sel?.kind === 'socket' && state.sockets?.find(s => s.id === ui.sel.id);
+  const f = ui.sel?.kind === 'furn' && getF(ui.sel.id);
+  const r = ui.sel?.kind === 'room' && ROOMS.find(r => r.id === ui.sel.id);
+
+  if (!sk && !f && !r){ fab.classList.remove('show'); return; }
+
+  if (sk) {
+    const meta = SOCKET_TYPES[sk.type] || SOCKET_TYPES.duplex;
+    fab.innerHTML = `
+      <span class="name">${meta.icon} ${meta.name.zh} <small style="background:#0f172a;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px">${sk.height}</small></span>
+      <button class="btn danger" data-a="delSk">${tr('حذف','Delete')}</button>
+      <button class="btn primary" data-a="prop">${tr('الخصائص','Properties')}</button>
+      <button class="btn" data-a="done">${tr('تم','Done')}</button>
+    `;
+    fab.classList.add('show');
+    fab.querySelectorAll('[data-a]').forEach(b => b.onclick = () => ({
+      delSk: deleteSel,
+      prop: () => drawer('panel', true),
+      done: () => { select(null); closeDrawers(); }
+    })[b.dataset.a]());
+    return;
+  }
+
   fab.innerHTML = f
     ? `<span class="name">${esc(nm(f.name))}</span><button class="btn" data-a="rotL">↺</button><button class="btn" data-a="rotR">↻ ${tr('تدوير','Rotate')}</button>
        <button class="btn" data-a="dup">${tr('نسخ','Duplicate')}</button><button class="btn danger" data-a="del">${tr('حذف','Delete')}</button><span class="sep"></span>
@@ -256,6 +285,174 @@ export function bindFurnPanel(f){
   $('#back').onclick = () => select(null);
 }
 
+/* ======================= Electrical Socket Panels ======================= */
+
+export function socketPanel(sk) {
+  const meta = SOCKET_TYPES[sk.type] || SOCKET_TYPES.duplex;
+  const typeOpts = Object.values(SOCKET_TYPES).map(t =>
+    `<option value="${t.id}" ${t.id === sk.type ? 'selected' : ''}>${t.icon} ${t.name.zh}</option>`
+  ).join('');
+
+  const heightOpts = SOCKET_HEIGHTS.map(h =>
+    `<option value="${h.value}" ${h.value === sk.height ? 'selected' : ''}>${h.label.zh}</option>`
+  ).join('');
+
+  const r = ROOMS.find(rm => rm.id === sk.roomId);
+
+  return `
+    <section>
+      <h3>⚡ ${tr('خصائص المقبس والتجهيز الكهربائي', 'Electrical Socket Properties')}</h3>
+      <div class="form">
+        <label class="full">${tr('نوع المقبس', 'Socket Type')}
+          <select id="skType" style="width:100%;padding:7px;border-radius:6px;border:1px solid var(--line);font-family:inherit;font-size:12px;background:#fff">
+            ${typeOpts}
+          </select>
+        </label>
+        <label class="full">${tr('الارتفاع عن البلاط (AFF)', 'Mounting Height (AFF)')}
+          <select id="skHeight" style="width:100%;padding:7px;border-radius:6px;border:1px solid var(--line);font-family:inherit;font-size:12px;background:#fff">
+            ${heightOpts}
+          </select>
+        </label>
+        <label class="full">${tr('التسمية والملاحظة', 'Label / Note')}
+          <input id="skLabel" value="${esc(sk.label || '')}" placeholder="${tr('مثال: شاشة الصالون', 'e.g. Living Room TV')}">
+        </label>
+        <label>${tr('الموضع X', 'Pos X')}<input type="number" id="skX" value="${Math.round(sk.x)}" step="10"></label>
+        <label>${tr('الموضع Y', 'Pos Y')}<input type="number" id="skY" value="${Math.round(sk.y)}" step="10"></label>
+      </div>
+
+      <div class="card-desc" style="margin-top:10px;padding:9px;background:rgba(2,132,199,0.07);border:1px solid rgba(2,132,199,0.2);border-radius:6px;font-size:11.5px;line-height:1.45">
+        <b style="color:#0284c7">${meta.name.zh}:</b> ${meta.desc.zh}
+        ${r ? `<div style="margin-top:5px;color:var(--text-muted);font-weight:600">📍 ${tr('الغرفة:', 'Room:')} ${esc(nm(r.name))}</div>` : ''}
+      </div>
+
+      <div class="actions" style="margin-top:12px">
+        <button class="btn danger" id="skDel">🗑️ ${tr('حذف المخرج', 'Delete Socket')}</button>
+        <button class="btn" id="skBack">${tr('← عودة', '← Back')}</button>
+      </div>
+    </section>
+  `;
+}
+
+export function bindSocketPanel(sk) {
+  const upd = (fn) => mutate(() => {
+    const s = state.sockets?.find(x => x.id === sk.id);
+    if (s) fn(s);
+  });
+
+  const skType = $('#skType');
+  if (skType) skType.onchange = e => upd(s => {
+    s.type = e.target.value;
+    s.height = SOCKET_TYPES[s.type]?.defaultHeight || s.height;
+    renderPanel();
+  });
+
+  const skHeight = $('#skHeight');
+  if (skHeight) skHeight.onchange = e => upd(s => s.height = e.target.value);
+
+  const skLabel = $('#skLabel');
+  if (skLabel) skLabel.onchange = e => upd(s => s.label = e.target.value.trim());
+
+  const num = (id, fn) => {
+    const el = $(id);
+    if (el) el.onchange = e => { const v = parseFloat(e.target.value); if (!isNaN(v)) upd(s => fn(s, v)); };
+  };
+  num('#skX', (s, v) => s.x = Math.round(v));
+  num('#skY', (s, v) => s.y = Math.round(v));
+
+  const skDel = $('#skDel');
+  if (skDel) skDel.onclick = deleteSel;
+
+  const skBack = $('#skBack');
+  if (skBack) skBack.onclick = () => select(null);
+}
+
+export function electricalOverviewPanel() {
+  const schedule = calculateSocketSchedule(state.sockets || [], ROOMS);
+  const typeCards = Object.entries(SOCKET_TYPES).map(([k, t]) => {
+    const cnt = schedule.byType[k] || 0;
+    return `
+      <div class="stat-mini-card" style="display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff">
+        <span style="font-size:16px">${t.icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name.zh}</div>
+          <div style="font-size:9.5px;color:var(--text-muted)">${t.defaultHeight}</div>
+        </div>
+        <b style="font-size:13px;color:${t.color}">${cnt}</b>
+      </div>
+    `;
+  }).join('');
+
+  const roomRows = Object.entries(schedule.byRoom).map(([rName, c]) => `
+    <tr>
+      <td>${esc(rName)}</td>
+      <td class="r"><b>${c.total}</b> <small class="muted">مقبس</small></td>
+    </tr>
+  `).join('');
+
+  return `
+    <section>
+      <h3>⚡ ${tr('مخطط وتوزيع الأفياش الكهربائية', 'Electrical Sockets Layout')}</h3>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.4">
+        ${tr('توزيع ذكي للمقابس بناءً على أماكن الأثاث والتجهيزات، مع التصدير والطباعة الهندسية.', 'Smart socket placement determined by furniture positions, with printable sheet & PDF export.')}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        <button class="btn primary" id="btnAutoElec" style="justify-content:center;padding:8px 4px;font-weight:700;font-size:11.5px">
+          ⚡ ${tr('توليد حسب الأثاث', 'Auto-Generate')}
+        </button>
+        <button class="btn" id="btnPrintElec" style="justify-content:center;padding:8px 4px;background:#0f172a;color:#fff;border-color:#0f172a;font-weight:700;font-size:11.5px">
+          🖨️ ${tr('طباعة وتصدير PDF', 'Print / PDF')}
+        </button>
+      </div>
+
+      <div class="total" style="margin-bottom:10px">
+        <span>${tr('إجمالي المقابس بالمسطح', 'Total Sockets')}</span>
+        <b style="color:var(--accent);font-size:16px">${schedule.total} مقبس</b>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px">
+        ${typeCards}
+      </div>
+    </section>
+
+    <section>
+      <h3>${tr('توزيع المقابس حسب الغرف', 'Sockets Per Room')}</h3>
+      <table>${roomRows || `<tr><td class="muted">${tr('لا توجد مقابس حالياً','No sockets yet')}</td></tr>`}</table>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn danger" id="btnClearElec">🗑️ ${tr('إفراغ الأفياش', 'Clear Sockets')}</button>
+      </div>
+    </section>
+  `;
+}
+
+export function bindElectricalOverview() {
+  const btnAuto = $('#btnAutoElec');
+  if (btnAuto) {
+    btnAuto.onclick = () => {
+      mutate(() => {
+        state.sockets = autoGenerateSockets(state.furniture, ROOMS, WALLS);
+      });
+      toast(tr(`تم توليد ${state.sockets.length} مقبس كهربائي بنجاح متوافقة مع الأثاث`, `Generated ${state.sockets.length} sockets matching furniture`));
+      renderPanel();
+    };
+  }
+
+  const btnPrint = $('#btnPrintElec');
+  if (btnPrint) {
+    btnPrint.onclick = () => openElectricalPrintSheet();
+  }
+
+  const btnClear = $('#btnClearElec');
+  if (btnClear) {
+    btnClear.onclick = () => {
+      if (!state.sockets?.length) return;
+      if (!confirm(tr('هل أنت متأكد من مسح جميع الأفياش من المخطط؟', 'Clear all sockets from the plan?'))) return;
+      mutate(() => { state.sockets = []; });
+      toast(tr('تم مسح جميع الأفياش', 'All sockets cleared'));
+      renderPanel();
+    };
+  }
+}
 
 window.closeDrawers = closeDrawers;
 window.drawer = drawer;

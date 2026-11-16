@@ -3,6 +3,7 @@ import { $, COARSE, esc, fmt, area, shade } from '../config.js';
 import { tr, nm } from '../i18n.js';
 import { BOUNDS, WALLS, WINS, DOORS, SLIDES, ROOMS } from '../data/floorplan.js';
 import { MATS, WALL_PAINTS } from '../data/materials.js';
+import { socketSymbolSVG } from '../data/electrical.js';
 import { state, ui, view, getF, aabb } from './state.js';
 import { renderPanel } from '../ui/panels.js';
 
@@ -161,7 +162,22 @@ export function renderRooms(){
 export function renderFurn(){
   const g = $('#gFurn');
   g.setAttribute('display', ui.layers.furn ? 'inline' : 'none');
-  g.innerHTML = state.furniture.map(f => {
+  
+  // Electrical view dims the furniture into architectural context
+  const isElec = ui.viewMode === 'elec';
+  g.setAttribute('opacity', isElec ? '0.24' : '1');
+  g.setAttribute('filter', isElec ? 'grayscale(0.95)' : 'none');
+
+  // Layering discipline: always sort rugs (سجاد) first so they render under all tables, beds, sofas, etc.
+  const sorted = [...state.furniture].sort((a, b) => {
+    const aIsRug = a.type === 'rug' || (a.name?.zh || a.name || '').includes('سجاد');
+    const bIsRug = b.type === 'rug' || (b.name?.zh || b.name || '').includes('سجاد');
+    if (aIsRug && !bIsRug) return -1;
+    if (!aIsRug && bIsRug) return 1;
+    return 0;
+  });
+
+  g.innerHTML = sorted.map(f => {
     const fs = Math.max(80, Math.min(170, Math.min(f.w,f.d)*.2));
     const label = Math.min(f.w,f.d) >= 380 && !NOLABEL.includes(f.type)
       ? `<text transform="rotate(${-f.rot})" font-family="'Tajawal', sans-serif" font-size="${fs}" text-anchor="middle" dominant-baseline="central" fill="#4a443c" opacity=".8" pointer-events="none">${esc(nm(f.name))}</text>` : '';
@@ -285,6 +301,23 @@ export function renderMeasure(){
   $('#gMeasure').innerHTML = s;
 }
 
+export function renderSockets(){
+  const g = $('#gSockets');
+  if (!g) return;
+
+  const isElec = ui.viewMode === 'elec';
+  const show = isElec || ui.layers.sockets;
+  g.setAttribute('display', show ? 'inline' : 'none');
+
+  if (!show || !state.sockets) {
+    g.innerHTML = '';
+    return;
+  }
+
+  const selId = ui.sel?.kind === 'socket' ? ui.sel.id : null;
+  g.innerHTML = state.sockets.map(s => socketSymbolSVG(s, s.id === selId)).join('');
+}
+
 export function renderSel(){
   const k = 1/view.s; let s = '';
   if (ui.sel?.kind === 'furn'){
@@ -304,6 +337,13 @@ export function renderSel(){
       s += `<text x="${f.cx}" y="${f.cy+hh+24*k}" font-family="'Tajawal', sans-serif" font-size="${12*k}" text-anchor="middle" fill="#b5653a" font-weight="600" pointer-events="none"
         stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${f.w} × ${f.d}</text>`;
     }
+  } else if (ui.sel?.kind === 'socket'){
+    const sk = state.sockets?.find(x => x.id === ui.sel.id);
+    if (sk) {
+      s += `<circle cx="${sk.x}" cy="${sk.y}" r="115" fill="none" stroke="#f59e0b" stroke-width="4" stroke-dasharray="10 5" vector-effect="non-scaling-stroke" pointer-events="none"/>
+        <text x="${sk.x}" y="${sk.y - 130}" font-family="'Tajawal', sans-serif" font-size="${13*k}" text-anchor="middle" fill="#f59e0b" font-weight="700" pointer-events="none"
+          stroke="#fff" stroke-width="${3.5*k}" paint-order="stroke">${esc(sk.label || sk.height || '')}</text>`;
+    }
   } else if (ui.sel?.kind === 'room'){
     const r = ROOMS.find(r => r.id === ui.sel.id);
     s += `<polygon points="${r.poly.map(p=>p.join(',')).join(' ')}" fill="rgba(181,101,58,.08)" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
@@ -312,7 +352,7 @@ export function renderSel(){
 }
 
 export function renderAll(){
-  renderGrid(); renderRooms(); renderFurn(); renderWalls(); renderLabels(); renderMeasure(); renderSel(); renderPanel(); updateHeader();
+  renderGrid(); renderRooms(); renderFurn(); renderWalls(); renderSockets(); renderLabels(); renderMeasure(); renderSel(); renderPanel(); updateHeader();
   window.View3D?.sync();
 }
 if (typeof window !== 'undefined') window.renderAll = renderAll;

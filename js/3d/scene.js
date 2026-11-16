@@ -218,7 +218,21 @@ export function init3D() {
 /* ======================= Scene Synchronization & Construction ======================= */
 export function buildFurn() {
   clearGroup(furnG);
-  state.furniture.forEach(f => furnG.add(buildFurniture(f)));
+  // Layering: add rugs first with renderOrder = 0 so furniture models sit gracefully above them
+  const sorted = [...state.furniture].sort((a, b) => {
+    const aIsRug = a.type === 'rug' || (a.name?.zh || a.name || '').includes('سجاد');
+    const bIsRug = b.type === 'rug' || (b.name?.zh || b.name || '').includes('سجاد');
+    if (aIsRug && !bIsRug) return -1;
+    if (!aIsRug && bIsRug) return 1;
+    return 0;
+  });
+
+  sorted.forEach(f => {
+    const m = buildFurniture(f);
+    const isRug = f.type === 'rug' || (f.name?.zh || f.name || '').includes('سجاد');
+    m.renderOrder = isRug ? 0 : 1;
+    furnG.add(m);
+  });
   furnG.visible = opt.furn;
   selKey = null;
   applyGrow();

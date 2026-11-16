@@ -67,6 +67,7 @@
       <button class="btn chip" data-layer="grid" data-en="Grid">الشبكة</button>
       <button class="btn chip" data-layer="bearing" data-en="Bearing walls">جدران حاملة</button>
       <button class="btn chip on" data-layer="wallSnap" title="محاذاة ومغناطيسية للجدران أثناء السحب" data-en-title="Snap furniture to walls while dragging" data-en="Wall snap">محاذاة للجدار</button>
+      <button class="btn chip" id="btnElecPlan" data-en="⚡ Sockets Plan" title="عرض ومخطط وتوزيع المقابس والأفياش الكهربائية">⚡ مخطط الأفياش</button>
     </div>
     <div class="grp only3d">
       <button class="btn chip on" data-cut="2.8" data-en="Full walls">جدران كاملة</button>
@@ -87,6 +88,7 @@
     <details class="menu"><summary class="btn" data-en="File ▾">ملف ▾</summary>
       <div class="menu-pop">
         <button class="btn" id="exportPng" data-en="Export image">تصدير صورة</button>
+        <button class="btn" id="exportElec" data-en="⚡ Print Electrical Plan (PDF)">⚡ طباعة مخطط الأفياش (PDF)</button>
         <button class="btn" id="exportJson" data-en="Export plan JSON">تصدير JSON</button>
         <button class="btn" id="importJson" data-en="Import plan">استيراد تصميم</button>
         <button class="btn danger" id="reset" data-en="Reset to default">استعادة الافتراضي</button>
@@ -110,6 +112,7 @@
       <g id="gFurn"></g>
       <g id="gWalls"></g>
       <g id="gOpen"></g>
+      <g id="gSockets"></g>
       <g id="gLabels" pointer-events="none"></g>
       <g id="gDims" pointer-events="none"></g>
       <g id="gMeasure" pointer-events="none"></g>
@@ -127,6 +130,12 @@
     </div>
     <div class="scalebar" id="scalebar"><span id="sbText">1 m</span><div class="bar" id="sbBar"></div></div>
     <div class="modehint" id="modehint"></div>
+    <div id="elecBar" class="elec-bar">
+      <span class="elec-title">⚡ مخطط وتوزيع الأفياش</span>
+      <button class="btn primary" id="barAutoElec">⚡ توليد حسب الأثاث</button>
+      <button class="btn" id="barPrintElec">🖨️ طباعة المخطط / PDF</button>
+      <button class="btn close-elec" id="barCloseElec">✕ خروج</button>
+    </div>
     <div id="fab"></div>
   </main>
 

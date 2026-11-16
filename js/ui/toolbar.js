@@ -7,6 +7,8 @@ import { state, ui, view, defaultState, fixState, mutate, snap, commit, undo, re
 import { renderAll, renderOpenings, renderDims, buildDefs, furnSVG } from '../2d/renderer.js';
 import { select, pushOut, toMM, applyView, fitView, uid, addItem, setTool, zoomCenter, setRatio } from '../2d/interactions.js';
 import { drawer, syncPaneBtns, closeDrawers, clearLayout } from './panels.js';
+import { openElectricalPrintSheet } from './electrical-print.js';
+import { autoGenerateSockets } from '../data/electrical.js';
 
 export let viewMode = '2d';
 let switching = false;
@@ -233,6 +235,40 @@ export function initToolbar(){
   if (uBtn) uBtn.onclick = undo;
   if (rBtn) rBtn.onclick = redo;
   if (clearBtn) clearBtn.onclick = clearLayout;
+
+  // Electrical Sockets Mode & Blueprint Handlers
+  const btnElec = $('#btnElecPlan');
+  const barClose = $('#barCloseElec');
+  const barAuto = $('#barAutoElec');
+  const barPrint = $('#barPrintElec');
+  const expElec = $('#exportElec');
+
+  const toggleElecMode = (forceState) => {
+    const next = forceState !== undefined ? forceState : (ui.viewMode !== 'elec');
+    ui.viewMode = next ? 'elec' : 'plan';
+    if (btnElec) btnElec.classList.toggle('on', next);
+    $('.app')?.classList.toggle('mode-elec', next);
+    $('#stage')?.classList.toggle('mode-elec', next);
+
+    if (next) {
+      if (is3D()) setView('2d');
+      drawer('panel', true);
+      toast(tr('تم تفعيل وضع مخطط الأفياش الكهربائية الذكي', 'Electrical sockets mode active'));
+    }
+    renderAll();
+  };
+
+  if (btnElec) btnElec.onclick = () => toggleElecMode();
+  if (barClose) barClose.onclick = () => toggleElecMode(false);
+  if (barAuto) barAuto.onclick = () => {
+    mutate(() => {
+      state.sockets = autoGenerateSockets(state.furniture, ROOMS, WALLS);
+    });
+    toast(tr(`تم توزيع ${state.sockets.length} مقبس كهربائي بنجاح حسب مواضع الأثاث`, `Generated ${state.sockets.length} sockets matching furniture`));
+    renderAll();
+  };
+  if (barPrint) barPrint.onclick = () => openElectricalPrintSheet();
+  if (expElec) expElec.onclick = () => openElectricalPrintSheet();
 
   const fsBtn = $('#fullscreen');
   if (fsBtn) fsBtn.onclick = toggleFullscreen;

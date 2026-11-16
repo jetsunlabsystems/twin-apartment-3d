@@ -1,16 +1,20 @@
 // 2D & Shared Application State, History (Undo/Redo), and Persistence
 import { STORE, norm } from '../config.js';
-import { ROOMS } from '../data/floorplan.js';
+import { ROOMS, WALLS } from '../data/floorplan.js';
 import { defaultFurniture } from '../data/default-furniture.js';
+import { autoGenerateSockets } from '../data/electrical.js';
 
 export function defaultState() {
   const rooms = {};
   ROOMS.forEach(r => (rooms[r.id] = { name: r.name, mat: r.mat, wallMat: r.wallMat || 'alabaster' }));
+  const furniture = defaultFurniture();
+  const sockets = autoGenerateSockets(furniture, ROOMS, WALLS);
   return {
-    furniture: defaultFurniture(),
+    furniture,
     rooms,
     demolished: [],
-    measures: []
+    measures: [],
+    sockets
   };
 }
 
@@ -32,6 +36,9 @@ export function fixState(s) {
   });
   s.demolished = s.demolished || [];
   s.measures = s.measures || [];
+  if (!s.sockets || !Array.isArray(s.sockets) || s.sockets.length === 0) {
+    s.sockets = autoGenerateSockets(s.furniture, ROOMS, WALLS);
+  }
   return s;
 }
 
@@ -40,10 +47,11 @@ window.state = state;
 
 export const ui = {
   tool: 'select',
+  viewMode: 'plan', // 'plan' | 'elec'
   sel: null,
   mA: null,
   mCur: null,
-  layers: { dims: true, labels: true, furn: true, grid: false, bearing: false, wallSnap: true }
+  layers: { dims: true, labels: true, furn: true, grid: false, bearing: false, wallSnap: true, sockets: true }
 };
 window.ui = ui;
 

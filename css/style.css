@@ -219,3 +219,82 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
   .lib-grid{grid-template-columns:1fr 1fr 1fr}
   .brand span,footer .only2d{display:none!important}
 }
+
+/* ---------- Electrical Sockets & Blueprint Layer ---------- */
+.socket-node{transition:transform .12s ease;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.18))}
+.socket-node:hover{transform:scale(1.18);filter:drop-shadow(0 4px 10px rgba(2,132,199,0.45))}
+.socket-node.selected{filter:drop-shadow(0 0 10px #f59e0b) drop-shadow(0 0 4px #f59e0b)}
+
+/* Floating Electrical Action Bar */
+.elec-bar{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:8px;padding:6px 14px;
+  background:rgba(15,23,42,0.92);color:#f8fafc;border-radius:9999px;border:1px solid rgba(255,255,255,0.18);
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);backdrop-filter:blur(10px);z-index:9}
+.mode-elec .elec-bar{display:flex}
+.elec-bar .elec-title{font-size:12px;font-weight:700;color:#38bdf8;margin-left:6px;display:flex;align-items:center;gap:4px}
+.elec-bar .btn{padding:4px 10px;font-size:11.5px;font-weight:600;border-radius:9999px;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.elec-bar .btn:hover{background:rgba(255,255,255,0.22)}
+.elec-bar .btn.primary{background:#0284c7;border-color:#0284c7}
+.elec-bar .btn.primary:hover{background:#0369a1}
+.elec-bar .btn.close-elec{background:transparent;border-color:transparent;color:#94a3b8}
+.elec-bar .btn.close-elec:hover{color:#fff;background:rgba(255,255,255,0.1)}
+
+/* ---------- Printable Executive Sheet Modal ---------- */
+.print-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);z-index:9999;
+  display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.print-modal-backdrop.open{display:flex}
+.print-sheet-container{width:100%;max-width:1400px;display:flex;flex-direction:column;gap:12px}
+.print-sheet-actions{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1e293b;border-radius:12px;color:#fff}
+.actions-left{display:flex;align-items:center;gap:8px}
+.actions-title{font-size:13px;font-weight:700;color:#93c5fd}
+.print-sheet-actions .close-btn{background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+
+/* A3/A4 Landscape Sheet Page */
+.print-sheet-page{background:#ffffff;color:#0f172a;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,0.5);
+  padding:24px;display:flex;flex-direction:column;gap:16px;min-height:850px;border:2px solid #0f172a}
+.sheet-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f172a;padding-bottom:12px}
+.title-block-main h2{margin:0;font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-0.5px}
+.title-block-main .en-sub{font-size:11px;font-weight:700;color:#64748b;letter-spacing:1px;margin-top:2px}
+.title-block-main .meta-tags{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:11.5px;color:#334155}
+.sheet-stamp{border:2px dashed #0284c7;padding:6px 14px;border-radius:6px;background:rgba(2,132,199,0.04);text-align:center}
+.stamp-title{display:block;font-size:11px;font-weight:800;color:#0284c7}
+.stamp-id{display:block;font-size:13px;font-weight:900;color:#0f172a;margin:2px 0}
+.stamp-status{display:block;font-size:9.5px;font-weight:700;color:#16a34a;letter-spacing:0.5px}
+
+.sheet-body{display:grid;grid-template-columns:1.8fr 1.2fr;gap:20px;flex:1}
+.blueprint-canvas-box{border:1.5px solid #0f172a;border-radius:6px;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:550px}
+.print-sheet-svg{width:100%;height:100%;max-height:680px}
+
+.sheet-side-data{display:flex;flex-direction:column;gap:12px}
+.sheet-card{border:1px solid #cbd5e1;border-radius:6px;padding:10px 12px;background:#fff}
+.sheet-card h4{margin:0 0 8px 0;font-size:12px;font-weight:800;color:#0f172a;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
+.legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.legend-item{display:flex;align-items:center;gap:8px}
+.legend-sw{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;color:#fff}
+.legend-info{display:flex;flex-direction:column;line-height:1.25}
+.legend-info b{font-size:11px;color:#0f172a}
+.legend-info b small{color:#64748b;font-weight:600}
+.legend-info span{font-size:9.5px;color:#64748b}
+
+.schedule-table{width:100%;border-collapse:collapse;font-size:11px}
+.schedule-table th,.schedule-table td{padding:4px 6px;border:1px solid #e2e8f0;text-align:right}
+.schedule-table th{background:#f1f5f9;font-weight:700;color:#334155}
+.schedule-table .c{text-align:center}
+.schedule-table .bold{font-weight:700}
+.schedule-table .tfoot-row td{background:#f8fafc;border-top:2px solid #0f172a;font-weight:800}
+.schedule-table .total-val{color:#0284c7;font-size:12px}
+
+.notes-card ol{margin:0;padding-right:16px;font-size:10px;color:#475569;line-height:1.5}
+.notes-card li{margin-bottom:3px}
+
+.sheet-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #cbd5e1;padding-top:8px;font-size:10.5px;color:#64748b}
+
+/* Native Print Styles (@media print) */
+@media print{
+  @page{size:landscape;margin:8mm}
+  body *{visibility:hidden}
+  .print-modal-backdrop,.print-modal-backdrop *{visibility:visible}
+  .print-modal-backdrop{position:absolute;left:0;top:0;width:100%;height:100%;background:#fff!important;padding:0!important;display:block!important;overflow:visible!important}
+  .print-sheet-container{max-width:none!important;width:100%!important}
+  .print-sheet-page{border:none!important;box-shadow:none!important;padding:0!important;min-height:auto!important}
+  .no-print{display:none!important}
+}
