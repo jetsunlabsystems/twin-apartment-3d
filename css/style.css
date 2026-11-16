@@ -221,9 +221,36 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
 }
 
 /* ---------- Electrical Sockets & Blueprint Layer ---------- */
-.socket-node{transition:transform .12s ease;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.18))}
-.socket-node:hover{transform:scale(1.18);filter:drop-shadow(0 4px 10px rgba(2,132,199,0.45))}
-.socket-node.selected{filter:drop-shadow(0 0 10px #f59e0b) drop-shadow(0 0 4px #f59e0b)}
+.socket-node {
+  cursor: pointer;
+}
+.socket-node circle,
+.socket-node rect,
+.socket-node path,
+.socket-node line {
+  transition: stroke 0.15s ease, fill 0.15s ease, filter 0.15s ease;
+}
+.socket-node:hover > circle:not([fill="transparent"]),
+.socket-node:hover > rect:not([fill="transparent"]) {
+  filter: drop-shadow(0 0 10px #38bdf8) drop-shadow(0 0 4px #0284c7);
+  stroke: #0284c7 !important;
+  stroke-width: 3.5 !important;
+}
+.socket-node.selected > circle:not([fill="transparent"]),
+.socket-node.selected > rect:not([fill="transparent"]) {
+  filter: drop-shadow(0 0 14px #f59e0b) drop-shadow(0 0 5px #f59e0b);
+  stroke: #f59e0b !important;
+  stroke-width: 4 !important;
+}
+
+/* In electrical mode, furniture and structural walls act as passive blueprints and do not steal socket clicks */
+.mode-elec #gFurn {
+  opacity: 0.24;
+  pointer-events: none;
+}
+.mode-elec #gWalls {
+  pointer-events: none;
+}
 
 /* Floating Electrical Action Bar */
 .elec-bar{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:8px;padding:6px 14px;

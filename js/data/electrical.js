@@ -64,7 +64,7 @@ export const SOCKET_HEIGHTS = [
 /**
  * Returns point projected onto the closest segment of a room's polygon
  */
-function projectPointToPoly(pt, poly) {
+export function projectPointToPoly(pt, poly) {
   let bestPt = null, bestDist = Infinity, bestAngle = 0, bestNormal = 0;
   const n = poly.length;
 
@@ -297,16 +297,23 @@ export function socketSymbolSVG(s, isSelected) {
       break;
   }
 
+  // Generous hit-target so users can easily hover and click without precision pixel hunting
+  const hitTarget = `
+    <circle cx="0" cy="0" r="140" fill="transparent" pointer-events="all"/>
+    <rect x="-80" y="70" width="160" height="70" rx="20" fill="transparent" pointer-events="all"/>
+  `;
+
   // Elevation badge pill
   const badge = `
-    <g transform="translate(0, 105)" pointer-events="none">
-      <rect x="-65" y="-18" width="130" height="36" rx="18" fill="#0f172a" opacity="0.88"/>
+    <g transform="translate(0, 105)" pointer-events="all">
+      <rect x="-65" y="-18" width="130" height="36" rx="18" fill="#0f172a" opacity="0.92"/>
       <text x="0" y="6" font-family="'Tajawal', sans-serif" font-size="24" font-weight="700" fill="#f8fafc" text-anchor="middle">${h}</text>
     </g>
   `;
 
   return `
     <g class="socket-node ${isSelected ? 'selected' : ''}" data-skid="${s.id}" transform="translate(${s.x}, ${s.y}) rotate(${s.rot || 0})" style="cursor:pointer">
+      ${hitTarget}
       ${sym}
       ${badge}
     </g>

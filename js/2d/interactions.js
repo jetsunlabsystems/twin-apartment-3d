@@ -7,6 +7,7 @@ import { state, ui, view, getF, aabb, mutate, snap, commit, undo, redo } from '.
 import { renderAll, renderSel, renderMeasure, renderFurn, renderSockets } from './renderer.js';
 import { renderPanel, renderFab, drawer, closeDrawers } from '../ui/panels.js';
 import { findBestPlacement } from './smart-placement.js';
+import { projectPointToPoly } from '../data/electrical.js';
 
 const svg = $('#plan') || $('#svg');
 
@@ -40,9 +41,13 @@ export function snapRects(){
 
 /* ======================= Selection & Manipulation ======================= */
 export function select(sel){
+  const prevKind = ui.sel?.kind;
   ui.sel = sel;
   renderSel();
   renderPanel();
+  if (ui.sel?.kind === 'socket' || prevKind === 'socket') {
+    renderSockets();
+  }
 }
 if (typeof window !== 'undefined') window.select = select;
 
@@ -277,8 +282,12 @@ function endDrag(cancel){
   }
   if (d.kind === 'pan'){
     if (!cancel && !d.moved && ui.tool === 'select') {
-      select(d.room ? { kind: 'room', id: d.room } : null);
-      if (d.room) drawer('panel', true);
+      if (ui.viewMode === 'elec') {
+        select(null);
+      } else {
+        select(d.room ? { kind: 'room', id: d.room } : null);
+        if (d.room) drawer('panel', true);
+      }
     }
     return;
   }
@@ -398,11 +407,23 @@ if (svg) {
     }
 
     if (drag.kind === 'socket_move') {
+      const farSocket = Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) >= (TAP + 6);
+      if (!drag.moved && !farSocket) return;
+      drag.moved = true;
       const sk = state.sockets?.find(s => s.id === drag.id);
-      if (sk && (drag.moved || far)) {
-        drag.moved = true;
-        sk.x = Math.round(p.x - drag.ox);
-        sk.y = Math.round(p.y - drag.oy);
+      if (sk) {
+        const rm = ROOMS.find(r => r.id === sk.roomId);
+        if (rm && rm.poly) {
+          const proj = projectPointToPoly([p.x - drag.ox, p.y - drag.oy], rm.poly);
+          if (proj && proj.pt) {
+            sk.x = proj.pt[0];
+            sk.y = proj.pt[1];
+            sk.rot = Math.round(proj.normal);
+          }
+        } else {
+          sk.x = Math.round(p.x - drag.ox);
+          sk.y = Math.round(p.y - drag.oy);
+        }
         renderSockets();
         renderSel();
       }
